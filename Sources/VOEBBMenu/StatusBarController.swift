@@ -3,15 +3,16 @@ import AppKit
 final class StatusBarController: NSObject {
     private var statusItem: NSStatusItem
     private var refreshTimer: Timer?
-    private var currentData: [AccountData] = []
+    var currentData: [AccountData] = []
     private var isLoading = false
-    private var lastError: String?
+
+    private static let maxTitleLength = 40
 
     override init() {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         super.init()
         setupButton()
-        setupMenu()
+        updateButton()
     }
 
     // MARK: - Setup
@@ -20,12 +21,13 @@ final class StatusBarController: NSObject {
         guard let button = statusItem.button else { return }
         button.image = NSImage(systemSymbolName: "books.vertical", accessibilityDescription: "VÖBB")
         button.image?.isTemplate = true
+        button.imagePosition = .imageLeft
     }
 
     func startRefreshing() {
         refresh()
-        // Refresh every 2 hours
-        refreshTimer = Timer.scheduledTimer(withTimeInterval: 7200, repeats: true) { [weak self] _ in
+        // Alle 4 Stunden automatisch aktualisieren
+        refreshTimer = Timer.scheduledTimer(withTimeInterval: 4 * 3600, repeats: true) { [weak self] _ in
             self?.refresh()
         }
     }
@@ -35,6 +37,8 @@ final class StatusBarController: NSObject {
     func refresh() {
         let accounts = AccountStorage.shared.accounts
         guard !accounts.isEmpty else {
+            currentData = []
+            updateButton()
             updateMenu()
             return
         }
@@ -68,6 +72,7 @@ final class StatusBarController: NSObject {
                 self.isLoading = false
                 self.updateButton()
                 self.updateMenu()
+                OverviewWindowController.shared.reload(with: finalResults)
             }
         }
     }
@@ -81,12 +86,12 @@ final class StatusBarController: NSObject {
             do {
                 let result = try await voebbSession.renewAllLoans(password: password)
                 await MainActor.run {
-                    self.showNotification(title: accountData.account.name, message: result)
+                    self.showAlert(title: accountData.account.name, message: result)
                     self.refresh()
                 }
             } catch {
                 await MainActor.run {
-                    self.showNotification(title: "Fehler", message: error.localizedDescription)
+                    self.showAlert(title: "Fehler beim Verlängern", message: error.localizedDescription)
                     self.isLoading = false
                     self.updateButton()
                 }
@@ -96,37 +101,42 @@ final class StatusBarController: NSObject {
 
     // MARK: - Button State
 
-    private func updateButton() {
+    func updateButton() {
         guard let button = statusItem.button else { return }
+
+        let totalLoans = currentData.reduce(0) { $0 + $1.loans.count }
+        let minDays    = currentData.compactMap(\.daysUntilNextDue).min()
+        let hasUrgent  = minDays.map { $0 < 7 } ?? false
+        let hasError   = currentData.contains { $0.error != nil }
+
+        // Icon: Bücherstapel; bei Dringlichkeit gefüllt
+        let imageName = (hasUrgent || hasError) ? "books.vertical.fill" : "books.vertical"
+        button.image = NSImage(systemSymbolName: imageName, accessibilityDescription: "VÖBB")
         button.image?.isTemplate = true
 
-        let hasIssues = currentData.contains { $0.hasOverdueFees || $0.hasOverdueLoans }
-        let hasSoonDue = currentData.contains { $0.hasDueSoonLoans }
-        let hasError = currentData.contains { $0.error != nil }
-
-        if hasIssues || hasError {
-            button.image = NSImage(systemSymbolName: "books.vertical.fill", accessibilityDescription: "VÖBB – Achtung")
-        } else if hasSoonDue {
-            button.image = NSImage(systemSymbolName: "books.vertical", accessibilityDescription: "VÖBB – Bald fällig")
+        // Zahl neben Symbol
+        if totalLoans > 0 {
+            button.title = " \(totalLoans)"
         } else {
-            button.image = NSImage(systemSymbolName: "books.vertical", accessibilityDescription: "VÖBB")
+            button.title = ""
         }
-        button.image?.isTemplate = true
+
+        // Tooltip mit kompaktem Status
+        if let days = minDays, days < 7 {
+            button.toolTip = "⚠️ Nächste Rückgabe in \(days) Tag\(days == 1 ? "" : "en")"
+        } else {
+            button.toolTip = "VÖBB Bibliotheksausleihen"
+        }
     }
 
     private func updateButtonForLoading() {
         guard let button = statusItem.button else { return }
-        button.image = NSImage(systemSymbolName: "arrow.clockwise", accessibilityDescription: "VÖBB – Lädt")
+        button.image = NSImage(systemSymbolName: "arrow.clockwise", accessibilityDescription: "Lädt…")
         button.image?.isTemplate = true
+        button.title = ""
     }
 
     // MARK: - Menu
-
-    private func setupMenu() {
-        let menu = NSMenu()
-        statusItem.menu = menu
-        menu.delegate = self
-    }
 
     func updateMenu() {
         let menu = NSMenu()
@@ -135,54 +145,47 @@ final class StatusBarController: NSObject {
         let accounts = AccountStorage.shared.accounts
 
         if accounts.isEmpty {
-            let item = NSMenuItem(title: "Keine Konten konfiguriert", action: nil, keyEquivalent: "")
-            item.isEnabled = false
-            menu.addItem(item)
+            add(to: menu, title: "Keine Konten konfiguriert", enabled: false)
         } else if isLoading {
-            let item = NSMenuItem(title: "Lade Daten …", action: nil, keyEquivalent: "")
-            item.isEnabled = false
-            menu.addItem(item)
+            add(to: menu, title: "Lade Daten …", enabled: false)
         } else {
-            for data in currentData {
+            for (i, data) in currentData.enumerated() {
+                if i > 0 { menu.addItem(.separator()) }
                 addAccountSection(to: menu, data: data)
-                menu.addItem(NSMenuItem.separator())
             }
         }
 
-        // Refresh
-        let lastUpdate = currentData.first?.lastUpdated
-        let refreshTitle: String
-        if let updated = lastUpdate {
-            let formatter = RelativeDateTimeFormatter()
-            formatter.locale = Locale(identifier: "de_DE")
-            formatter.unitsStyle = .short
-            let ago = formatter.localizedString(for: updated, relativeTo: Date())
-            refreshTitle = "Aktualisieren (zuletzt \(ago))"
-        } else {
-            refreshTitle = "Aktualisieren"
-        }
+        menu.addItem(.separator())
+
+        // Übersicht
+        let overviewItem = NSMenuItem(title: "Alle Ausleihen anzeigen …", action: #selector(onOverview), keyEquivalent: "o")
+        overviewItem.target = self
+        menu.addItem(overviewItem)
+
+        // Aktualisieren
+        let refreshTitle = buildRefreshTitle()
         let refreshItem = NSMenuItem(title: refreshTitle, action: #selector(onRefresh), keyEquivalent: "r")
         refreshItem.target = self
         menu.addItem(refreshItem)
 
-        menu.addItem(NSMenuItem.separator())
+        menu.addItem(.separator())
 
-        // Settings
         let settingsItem = NSMenuItem(title: "Einstellungen …", action: #selector(onSettings), keyEquivalent: ",")
         settingsItem.target = self
         menu.addItem(settingsItem)
 
-        menu.addItem(NSMenuItem.separator())
+        menu.addItem(.separator())
 
-        let quitItem = NSMenuItem(title: "Beenden", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
-        menu.addItem(quitItem)
+        menu.addItem(NSMenuItem(title: "Beenden", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q"))
 
         statusItem.menu = menu
         menu.delegate = self
     }
 
+    // MARK: - Account Section
+
     private func addAccountSection(to menu: NSMenu, data: AccountData) {
-        // Account header
+        // Konto-Überschrift (fett)
         let headerItem = NSMenuItem(title: data.account.name, action: nil, keyEquivalent: "")
         headerItem.isEnabled = false
         headerItem.attributedTitle = NSAttributedString(
@@ -192,43 +195,37 @@ final class StatusBarController: NSObject {
         menu.addItem(headerItem)
 
         if let error = data.error {
-            let errorItem = NSMenuItem(title: "⚠️  \(error)", action: nil, keyEquivalent: "")
-            errorItem.isEnabled = false
-            menu.addItem(errorItem)
+            add(to: menu, title: "  ⚠️  \(truncate(error, to: 50))", enabled: false)
             return
         }
 
-        // Loan count + next due date
+        // Ausleihen-Zeile
         if data.loans.isEmpty {
-            let item = NSMenuItem(title: "  📚  Keine Ausleihen", action: nil, keyEquivalent: "")
-            item.isEnabled = false
-            menu.addItem(item)
+            add(to: menu, title: "  📗  Keine Ausleihen", enabled: false)
         } else {
-            let count = data.loans.count
-            let loanItem = NSMenuItem(title: "  📚  \(count) Ausleihe\(count == 1 ? "" : "n")", action: nil, keyEquivalent: "")
-            loanItem.isEnabled = false
-            menu.addItem(loanItem)
+            let urgencyEmoji = urgencyBadge(for: data)
+            let loanItem = add(to: menu,
+                               title: "  \(urgencyEmoji)  \(data.loans.count) Ausleihe\(data.loans.count == 1 ? "" : "n")",
+                               enabled: false)
+            if let days = data.daysUntilNextDue {
+                loanItem.toolTip = "Nächste Rückgabe: \(data.nextDueDateString ?? "") (\(days) Tag\(days == 1 ? "" : "e"))"
+            }
 
             if let nextDate = data.nextDueDateString {
-                let isOverdue = data.hasOverdueLoans
-                let isSoon   = data.hasDueSoonLoans
-                let icon = isOverdue ? "🔴" : isSoon ? "🟡" : "📅"
-                let dateItem = NSMenuItem(title: "  \(icon)  Nächste Rückgabe: \(nextDate)", action: nil, keyEquivalent: "")
-                dateItem.isEnabled = false
-                menu.addItem(dateItem)
+                let days = data.daysUntilNextDue ?? 0
+                let icon = days < 7 ? "📅" : "📅"
+                add(to: menu, title: "  \(icon)  Nächste Rückgabe: \(nextDate)", enabled: false)
             }
         }
 
-        // Fees
-        let feesIcon = data.fees > 0 ? "💶" : "✅"
-        let feesTitle = data.fees > 0
-            ? String(format: "  \(feesIcon)  %.2f € Gebühren", data.fees)
-            : "  \(feesIcon)  Keine Gebühren"
-        let feesItem = NSMenuItem(title: feesTitle, action: nil, keyEquivalent: "")
-        feesItem.isEnabled = false
-        menu.addItem(feesItem)
+        // Gebühren
+        if data.fees > 0 {
+            add(to: menu, title: String(format: "  💶  %.2f € Gebühren", data.fees), enabled: false)
+        } else {
+            add(to: menu, title: "  ✅  Keine Gebühren", enabled: false)
+        }
 
-        // Renew button
+        // Verlängern-Button
         if !data.loans.isEmpty {
             let renewItem = NSMenuItem(title: "  ↺  Alle verlängern", action: #selector(onRenew(_:)), keyEquivalent: "")
             renewItem.target = self
@@ -236,31 +233,67 @@ final class StatusBarController: NSObject {
             menu.addItem(renewItem)
         }
 
-        // Book list (submenu)
+        // Bücherlist als Untermenü
         if !data.loans.isEmpty {
-            let submenuItem = NSMenuItem(title: "  📖  Ausgeliehene Bücher", action: nil, keyEquivalent: "")
+            let subItem = NSMenuItem(title: "  📖  Ausgeliehene Bücher", action: nil, keyEquivalent: "")
             let submenu = NSMenu()
             for loan in data.loans.sorted(by: { $0.dueDate < $1.dueDate }) {
-                let icon = loan.isOverdue ? "🔴" : loan.isDueSoon ? "🟡" : "📗"
-                let title = "\(icon)  \(loan.title)"
-                let subItem = NSMenuItem(title: title, action: nil, keyEquivalent: "")
-                subItem.toolTip = "Fällig: \(loan.dueDateString)\n\(loan.library)"
-                subItem.isEnabled = false
-                submenu.addItem(subItem)
+                let short = truncate(loan.title, to: Self.maxTitleLength)
+                let menuItem = NSMenuItem(title: "\(loan.bookEmoji)  \(short)", action: nil, keyEquivalent: "")
+                menuItem.toolTip = "\(loan.title)\n📅 Fällig: \(loan.dueDateString)\n🏛 \(loan.library)"
+                menuItem.isEnabled = false
+                submenu.addItem(menuItem)
             }
-            submenuItem.submenu = submenu
-            menu.addItem(submenuItem)
+            subItem.submenu = submenu
+            menu.addItem(subItem)
         }
+    }
+
+    // MARK: - Helpers
+
+    /// Dringlichkeits-Emoji für eine Account-Zusammenfassung
+    private func urgencyBadge(for data: AccountData) -> String {
+        guard let days = data.daysUntilNextDue else { return "📗" }
+        if days < 7  { return "📕" }
+        if days <= 14 { return "📙" }
+        return "📗"
+    }
+
+    private func truncate(_ s: String, to length: Int) -> String {
+        guard s.count > length else { return s }
+        return String(s.prefix(length - 1)) + "…"
+    }
+
+    @discardableResult
+    private func add(to menu: NSMenu, title: String, enabled: Bool) -> NSMenuItem {
+        let item = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+        item.isEnabled = enabled
+        menu.addItem(item)
+        return item
+    }
+
+    private func buildRefreshTitle() -> String {
+        let lastUpdate = currentData.first?.lastUpdated
+        if let updated = lastUpdate {
+            let formatter = RelativeDateTimeFormatter()
+            formatter.locale = Locale(identifier: "de_DE")
+            formatter.unitsStyle = .short
+            let ago = formatter.localizedString(for: updated, relativeTo: Date())
+            return "Aktualisieren (zuletzt \(ago))"
+        }
+        return "Aktualisieren"
     }
 
     // MARK: - Actions
 
-    @objc private func onRefresh() {
-        refresh()
-    }
+    @objc private func onRefresh() { refresh() }
 
     @objc private func onSettings() {
         PreferencesWindowController.shared.showWindow()
+    }
+
+    @objc private func onOverview() {
+        OverviewWindowController.shared.showWindow(with: currentData)
     }
 
     @objc private func onRenew(_ sender: NSMenuItem) {
@@ -270,10 +303,7 @@ final class StatusBarController: NSObject {
         renewAll(for: data)
     }
 
-    // MARK: - Notification
-
-    private func showNotification(title: String, message: String) {
-        // Simple alert for renewal results
+    private func showAlert(title: String, message: String) {
         let alert = NSAlert()
         alert.messageText = title
         alert.informativeText = message
@@ -285,9 +315,9 @@ final class StatusBarController: NSObject {
 
 extension StatusBarController: NSMenuDelegate {
     func menuWillOpen(_ menu: NSMenu) {
-        // Refresh data when menu is about to open if data is stale (> 30 min)
+        // Aktualisieren wenn Daten älter als 4 Stunden
         if let lastUpdate = currentData.first?.lastUpdated,
-           Date().timeIntervalSince(lastUpdate) > 1800 {
+           Date().timeIntervalSince(lastUpdate) > 4 * 3600 {
             refresh()
         }
     }
