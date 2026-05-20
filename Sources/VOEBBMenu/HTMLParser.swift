@@ -4,15 +4,27 @@ enum HTMLParser {
     // MARK: - Overview Page
 
     static func parseLoanCount(_ html: String) -> Int? {
-        // <li><a href="#" id="idfnN">12 Ausleihen</a></li>
-        // <li><span>Keine Ausleihen</span></li>
-        if html.contains("Keine Ausleihen") { return 0 }
-        if let m = html.range(of: #"(\d+)\s+Ausleihen"#, options: .regularExpression),
-           let numStr = html[m].split(separator: " ").first,
+        // Suche NUR innerhalb des #konto-services Blocks, damit
+        // "Keine Ausleihen" in der Navigationsleiste nicht stört.
+        let servicesHTML = extractKontoServices(html) ?? html
+
+        if servicesHTML.contains("Keine Ausleihen") { return 0 }
+        if let m = servicesHTML.range(of: #"(\d+)\s+Ausleihen"#, options: .regularExpression),
+           let numStr = String(servicesHTML[m]).split(separator: " ").first,
            let n = Int(numStr) {
             return n
         }
         return nil
+    }
+
+    private static func extractKontoServices(_ html: String) -> String? {
+        guard let start = html.range(of: #"id="konto-services""#, options: .regularExpression) else { return nil }
+        // Suche das Ende des Blocks: </section> oder </div> nach dem Start
+        let tail = html[start.lowerBound...]
+        if let end = tail.range(of: "</section>") {
+            return String(tail[tail.startIndex..<end.upperBound])
+        }
+        return String(tail.prefix(2000))
     }
 
     // MARK: - Loans Page

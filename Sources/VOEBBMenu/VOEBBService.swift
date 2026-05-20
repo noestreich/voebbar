@@ -35,18 +35,31 @@ final class VOEBBSession {
         let (appURL, overviewHTML) = try await login(password: password)
         var data = AccountData(account: account)
 
-        // Navigate to loans
-        if let loanCount = HTMLParser.parseLoanCount(overviewHTML), loanCount > 0 {
-            let (loansHTML, _) = try await navigate(appURL: appURL, fromHTML: overviewHTML, navCode: "*SZA", rc: 3)
-            data.loans = HTMLParser.parseLoans(loansHTML)
+        let loanCount = HTMLParser.parseLoanCount(overviewHTML)
 
-            // Navigate to fees from loans page
-            let (feesHTML, _) = try await navigate(appURL: appURL, fromHTML: loansHTML, navCode: "*SGG", rc: 4)
-            let (fees, cardValid) = HTMLParser.parseFees(feesHTML)
-            data.fees = fees
-            data.cardValidUntil = cardValid
+        // loanCount == 0  → definitiv keine Ausleihen, direkt zu Gebühren
+        // loanCount > 0   → Ausleihen vorhanden, Seite abrufen
+        // loanCount == nil → Erkennung unsicher, Ausleihen trotzdem probieren
+        if loanCount != 0 {
+            let (loansHTML, _) = try await navigate(appURL: appURL, fromHTML: overviewHTML, navCode: "*SZA", rc: 3)
+            let parsed = HTMLParser.parseLoans(loansHTML)
+            data.loans = parsed
+
+            // Gebühren: von der Ausleihseite aus (rc=4) falls Bücher gefunden,
+            // sonst von der Übersicht (rc=3) – Fallback falls *SZA kein loans-HTML lieferte
+            if !parsed.isEmpty {
+                let (feesHTML, _) = try await navigate(appURL: appURL, fromHTML: loansHTML, navCode: "*SGG", rc: 4)
+                let (fees, cardValid) = HTMLParser.parseFees(feesHTML)
+                data.fees = fees
+                data.cardValidUntil = cardValid
+            } else {
+                let (feesHTML, _) = try await navigate(appURL: appURL, fromHTML: overviewHTML, navCode: "*SGG", rc: 3)
+                let (fees, cardValid) = HTMLParser.parseFees(feesHTML)
+                data.fees = fees
+                data.cardValidUntil = cardValid
+            }
         } else {
-            // Navigate directly to fees from overview
+            // Keine Ausleihen laut Übersicht → direkt Gebühren
             let (feesHTML, _) = try await navigate(appURL: appURL, fromHTML: overviewHTML, navCode: "*SGG", rc: 3)
             let (fees, cardValid) = HTMLParser.parseFees(feesHTML)
             data.fees = fees
