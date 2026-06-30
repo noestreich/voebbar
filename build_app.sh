@@ -16,6 +16,12 @@ mkdir -p "$APP_DIR/Contents/Resources"
 # Copy binary
 cp "$BINARY" "$APP_DIR/Contents/MacOS/$APP_NAME"
 
+# Copy icon if available
+ICON_SRC="/Users/nicolasoestreich/Desktop/icon.icns"
+if [ -f "$ICON_SRC" ]; then
+    cp "$ICON_SRC" "$APP_DIR/Contents/Resources/AppIcon.icns"
+fi
+
 # Create Info.plist
 cat > "$APP_DIR/Contents/Info.plist" << 'PLIST'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -40,6 +46,8 @@ cat > "$APP_DIR/Contents/Info.plist" << 'PLIST'
     <true/>
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
+    <key>CFBundleIconFile</key>
+    <string>AppIcon</string>
     <key>NSHighResolutionCapable</key>
     <true/>
     <key>LSMinimumSystemVersion</key>

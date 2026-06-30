@@ -65,10 +65,16 @@ enum HTMLParser {
 
         let library = stripHTML(textCols[1]).trimmingCharacters(in: .whitespaces)
 
-        // Title is first line before <br>
-        let titleLine = textCols[2].components(separatedBy: "<br>").first ?? textCols[2]
-        let title = stripHTML(titleLine).trimmingCharacters(in: .whitespaces)
-            .replacingOccurrences(of: "¬", with: "")
+        // Title column: split on <br>, skip leading media-type tags like [DVD-Video]
+        let titleParts = textCols[2]
+            .components(separatedBy: "<br>")
+            .map { stripHTML($0).trimmingCharacters(in: .whitespaces).replacingOccurrences(of: "¬", with: "") }
+            .filter { !$0.isEmpty }
+        // A media-type indicator looks like "[DVD-Video]", "[ND-Video]", "[Blu-ray]" etc.
+        let mediaTypePattern = try! NSRegularExpression(pattern: #"^\[.+\]$"#)
+        let title = titleParts.first(where: {
+            mediaTypePattern.firstMatch(in: $0, range: NSRange($0.startIndex..., in: $0)) == nil
+        }) ?? titleParts.first ?? ""
 
         let status = stripHTML(textCols[3]).trimmingCharacters(in: .whitespaces)
 
