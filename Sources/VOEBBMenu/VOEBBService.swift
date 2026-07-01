@@ -41,14 +41,41 @@ final class VOEBBSession {
         // loanCount > 0   → Ausleihen vorhanden, Seite abrufen
         // loanCount == nil → Erkennung unsicher, Ausleihen trotzdem probieren
         if loanCount != 0 {
-            let (loansHTML, _) = try await navigate(appURL: appURL, fromHTML: overviewHTML, navCode: "*SZA", rc: 3)
-            let parsed = HTMLParser.parseLoans(loansHTML)
-            data.loans = parsed
+            let (loansHTML, loansURL) = try await navigate(appURL: appURL, fromHTML: overviewHTML, navCode: "*SZA", rc: 3)
+            var parsed = HTMLParser.parseLoans(loansHTML)
 
             // Gebühren: von der Ausleihseite aus (rc=4) falls Bücher gefunden,
             // sonst von der Übersicht (rc=3) – Fallback falls *SZA kein loans-HTML lieferte
             if !parsed.isEmpty {
-                let (feesHTML, _) = try await navigate(appURL: appURL, fromHTML: loansHTML, navCode: "*SGG", rc: 4)
+                // Verlängerbarkeit proben ("Markierte Medien verlängerbar?", lesend) und
+                // pro Buch mergen. Fehlertolerant: ohne Probe bleiben die Felder einfach nil.
+                var feesSourceHTML = loansHTML
+                var feesRC = 4
+                do {
+                    let probeHTML = try await pressRenewalButton(
+                        appURL: appURL, fromHTML: loansHTML, referer: loansURL,
+                        buttonField: "$Button$2", focusID: "$$GFBO_7", requestCount: 4,
+                        checkboxValues: parsed.map(\.checkboxValue).filter { !$0.isEmpty }
+                    )
+                    let statuses = HTMLParser.parseRenewability(probeHTML)
+                    if !statuses.isEmpty {
+                        let byCheckbox = Dictionary(statuses.map { ($0.checkboxValue, $0) },
+                                                    uniquingKeysWith: { first, _ in first })
+                        for i in parsed.indices {
+                            if let s = byCheckbox[parsed[i].checkboxValue] {
+                                parsed[i].isRenewable = s.renewable
+                                parsed[i].renewalReason = s.reason
+                            }
+                        }
+                        feesSourceHTML = probeHTML
+                        feesRC = 5
+                    }
+                } catch {
+                    // Probe fehlgeschlagen → Ausleihen ohne Verlängerbarkeits-Info anzeigen
+                }
+                data.loans = parsed
+
+                let (feesHTML, _) = try await navigate(appURL: appURL, fromHTML: feesSourceHTML, navCode: "*SGG", rc: feesRC)
                 let (fees, cardValid) = HTMLParser.parseFees(feesHTML)
                 data.fees = fees
                 data.cardValidUntil = cardValid
@@ -70,29 +97,80 @@ final class VOEBBSession {
         return data
     }
 
-    func renewAllLoans(password: String) async throws -> String {
+    /// Renews all renewable loans.
+    func renewAllLoans(password: String) async throws -> RenewalOutcome {
+        try await renewLoans(password: password) { _ in true }
+    }
+
+    /// Renews only loans due within `days` days (overdue included), and only those.
+    func renewDueLoans(password: String, withinDays days: Int) async throws -> RenewalOutcome {
+        try await renewLoans(password: password) { $0.daysUntilDue <= days }
+    }
+
+    /// Renewal is a two-step flow because BOTH "Alle verlängern" and "Markierte Medien
+    /// verlängern" abort the entire batch if a single selected item is blocked (e.g. by a
+    /// Vormerkung). So we first probe renewability ("Markierte Medien verlängerbar?",
+    /// $Button$2) on the selected candidates, then submit only the confirmed-renewable ones
+    /// ("Markierte Medien verlängern", $Button$1). See memory `voebb-renewal-button-mapping`.
+    /// `select` narrows which loans are considered (e.g. only soon-due ones).
+    private func renewLoans(password: String, selecting select: (Loan) -> Bool) async throws -> RenewalOutcome {
         let (appURL, overviewHTML) = try await login(password: password)
 
         let (loansHTML, loansURL) = try await navigate(appURL: appURL, fromHTML: overviewHTML, navCode: "*SZA", rc: 3)
         let loans = HTMLParser.parseLoans(loansHTML)
 
-        guard !loans.isEmpty else { return "Keine Ausleihen vorhanden" }
+        guard !loans.isEmpty else {
+            return RenewalOutcome(specialMessage: "Keine Ausleihen vorhanden")
+        }
 
-        // Extract hidden fields from loans page
-        let hidden = extractHiddenInputs(loansHTML)
+        // Only the selected candidates are probed/renewed — never touch the others.
+        let candidateCheckboxes = loans.filter(select).map(\.checkboxValue).filter { !$0.isEmpty }
+        guard !candidateCheckboxes.isEmpty else {
+            return RenewalOutcome()
+        }
 
-        // Build POST with all checkboxes selected
-        var postData = hidden
-        postData["requestCount"] = "4"
+        // Step 1: probe "verlängerbar?" ($Button$2) with only the candidates checked.
+        let probeHTML = try await pressRenewalButton(
+            appURL: appURL, fromHTML: loansHTML, referer: loansURL,
+            buttonField: "$Button$2", focusID: "$$GFBO_7", requestCount: 4,
+            checkboxValues: candidateCheckboxes
+        )
+        // The probe reports on the marked media; restrict to our candidate set defensively.
+        let candidateSet = Set(candidateCheckboxes)
+        let statuses = HTMLParser.parseRenewability(probeHTML).filter { candidateSet.contains($0.checkboxValue) }
+        let renewable = statuses.filter { $0.renewable }
+        let blocked = statuses.filter { !$0.renewable }
+
+        guard !renewable.isEmpty else {
+            return RenewalOutcome(renewed: [], blocked: blocked)
+        }
+
+        // Step 2: renew only the confirmed-renewable candidates ($Button$1).
+        _ = try await pressRenewalButton(
+            appURL: appURL, fromHTML: probeHTML, referer: appURL,
+            buttonField: "$Button$1", focusID: "$$GFBO_4", requestCount: 5,
+            checkboxValues: renewable.map(\.checkboxValue)
+        )
+
+        return RenewalOutcome(renewed: renewable, blocked: blocked)
+    }
+
+    /// Presses one of the renewal-page buttons by re-POSTing the page's hidden fields plus the
+    /// selected checkboxes. aDISWeb expects duplicate `$RTable_checkbox[]` keys, so the body is
+    /// encoded manually (URLSession can't send duplicate keys via a dictionary).
+    private func pressRenewalButton(
+        appURL: String, fromHTML: String, referer: String,
+        buttonField: String, focusID: String, requestCount: Int,
+        checkboxValues: [String]
+    ) async throws -> String {
+        var postData = extractHiddenInputs(fromHTML)
+        postData["requestCount"] = "\(requestCount)"
         postData["scriptEnabled"] = "true"
         postData["overrideScrollPos"] = "0"
-        postData["focus"] = "$$GFBO_11"
+        postData["focus"] = focusID
         postData["source"] = "$B"
-        postData["$Button$0"] = "pressed"
+        postData[buttonField] = "pressed"
 
-        // Add all checkboxes
-        let checkboxValues = loans.map { $0.checkboxValue }.filter { !$0.isEmpty }
-        // URLSession doesn't natively support duplicate keys, so we encode manually
         var parts: [String] = []
         for (k, v) in postData {
             parts.append("\(urlEncode(k))=\(urlEncode(v))")
@@ -102,8 +180,7 @@ final class VOEBBSession {
         }
         let body = parts.joined(separator: "&")
 
-        let resultHTML = try await postRaw(url: appURL, body: body, referer: loansURL)
-        return HTMLParser.parseRenewalResult(resultHTML)
+        return try await postRaw(url: appURL, body: body, referer: referer)
     }
 
     // MARK: - Private: Login

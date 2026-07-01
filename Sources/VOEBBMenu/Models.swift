@@ -19,8 +19,17 @@ struct Loan {
     let renewalStatus: String
     let checkboxValue: String
 
+    /// Result of the "Markierte Medien verlängerbar?" probe, merged in during refresh.
+    /// nil = probe didn't run or the row couldn't be matched.
+    var isRenewable: Bool? = nil
+    /// Reason a blocked item can't be renewed (e.g. "Vormerkungen"); empty otherwise.
+    var renewalReason: String = ""
+
     var canRenew: Bool {
         !renewalStatus.localizedCaseInsensitiveContains("nicht möglich") &&
+        !renewalStatus.localizedCaseInsensitiveContains("keine verlängerung") &&
+        !renewalStatus.localizedCaseInsensitiveContains("nicht verlängerbar") &&
+        !renewalStatus.localizedCaseInsensitiveContains("vormerk") &&
         !renewalStatus.isEmpty
     }
 
@@ -47,6 +56,50 @@ struct Loan {
         if isOverdue || daysUntilDue < 7 { return "📕" }
         if daysUntilDue <= 14           { return "📙" }
         return "📗"
+    }
+}
+
+/// One loan row from the "Markierte Medien verlängerbar?" probe response.
+struct RenewabilityRow {
+    let checkboxValue: String
+    let title: String
+    let renewable: Bool
+    /// Reason a blocked item can't be renewed (e.g. "Verlängerung noch nicht möglich- Stand …"); empty if renewable.
+    let reason: String
+}
+
+/// Result of the two-step renewal (probe → renew only renewable items).
+struct RenewalOutcome {
+    let renewed: [RenewabilityRow]
+    let blocked: [RenewabilityRow]
+    /// Set for special cases (e.g. no loans at all); otherwise nil and the message is built from renewed/blocked.
+    let specialMessage: String?
+
+    init(renewed: [RenewabilityRow] = [], blocked: [RenewabilityRow] = [], specialMessage: String? = nil) {
+        self.renewed = renewed
+        self.blocked = blocked
+        self.specialMessage = specialMessage
+    }
+
+    var userMessage: String {
+        if let specialMessage { return specialMessage }
+
+        var lines: [String] = []
+        if renewed.isEmpty {
+            lines.append("Keine Medien verlängert.")
+        } else {
+            lines.append("\(renewed.count) \(renewed.count == 1 ? "Medium" : "Medien") verlängert.")
+        }
+        if !blocked.isEmpty {
+            lines.append("")
+            lines.append("Nicht verlängerbar:")
+            for item in blocked {
+                let title = item.title.isEmpty ? "Unbekannter Titel" : item.title
+                let reason = item.reason.isEmpty ? "" : " – \(item.reason)"
+                lines.append("• \(title)\(reason)")
+            }
+        }
+        return lines.joined(separator: "\n")
     }
 }
 
