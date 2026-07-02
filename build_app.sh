@@ -16,10 +16,14 @@ mkdir -p "$APP_DIR/Contents/Resources"
 # Copy binary
 cp "$BINARY" "$APP_DIR/Contents/MacOS/$APP_NAME"
 
-# Copy icon if available
-ICON_SRC="/Users/nicolasoestreich/Desktop/icon.icns"
+# Copy icon if available. Defaults to a repo-relative AppIcon.icns;
+# override with `ICON_SRC=/path/to/icon.icns ./build_app.sh`.
+ICON_SRC="${ICON_SRC:-AppIcon.icns}"
 if [ -f "$ICON_SRC" ]; then
     cp "$ICON_SRC" "$APP_DIR/Contents/Resources/AppIcon.icns"
+    echo "Icon bundled from: $ICON_SRC"
+else
+    echo "No icon found at '$ICON_SRC' — building without custom app icon."
 fi
 
 # Create Info.plist

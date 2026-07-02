@@ -5,6 +5,8 @@ final class PreferencesWindowController: NSObject, NSWindowDelegate {
 
     private var window: NSWindow?
     private var tableView: NSTableView?
+    private var intervalButtons: [NSButton] = []
+    private var renewalButtons: [NSButton] = []
     private var accounts: [LibraryAccount] = []
     private weak var statusBarController: StatusBarController?
 
@@ -23,8 +25,8 @@ final class PreferencesWindowController: NSObject, NSWindowDelegate {
 
     private func buildWindow() {
         let win = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 480, height: 380),
-            styleMask: [.titled, .closable, .resizable],
+            contentRect: NSRect(x: 0, y: 0, width: 480, height: 490),
+            styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
         )
@@ -47,7 +49,7 @@ final class PreferencesWindowController: NSObject, NSWindowDelegate {
         contentView.addSubview(subtitleLabel)
 
         // Table
-        let scrollView = NSScrollView(frame: NSRect(x: 16, y: 88, width: contentView.frame.width - 32, height: contentView.frame.height - 160))
+        let scrollView = NSScrollView(frame: NSRect(x: 16, y: 216, width: contentView.frame.width - 32, height: contentView.frame.height - 288))
         scrollView.autoresizingMask = [.width, .height]
         scrollView.hasVerticalScroller = true
         scrollView.borderType = .bezelBorder
@@ -71,14 +73,36 @@ final class PreferencesWindowController: NSObject, NSWindowDelegate {
 
         // Buttons below table
         let addBtn = NSButton(title: "+ Konto hinzufügen", target: self, action: #selector(onAdd))
-        addBtn.frame = NSRect(x: 16, y: 56, width: 160, height: 26)
+        addBtn.frame = NSRect(x: 16, y: 182, width: 160, height: 26)
         addBtn.bezelStyle = .rounded
         contentView.addSubview(addBtn)
 
         let removeBtn = NSButton(title: "Konto entfernen", target: self, action: #selector(onRemove))
-        removeBtn.frame = NSRect(x: 184, y: 56, width: 140, height: 26)
+        removeBtn.frame = NSRect(x: 184, y: 182, width: 140, height: 26)
         removeBtn.bezelStyle = .rounded
         contentView.addSubview(removeBtn)
+
+        // Two settings rows, both aligned to the add/remove buttons above (x: 16...324).
+        let rowStartX: CGFloat = addBtn.frame.minX
+        let rowEndX: CGFloat = removeBtn.frame.maxX
+
+        // Refresh interval row
+        let intervalLabel = makeLabel("Automatische Aktualisierung alle:", font: .boldSystemFont(ofSize: 13))
+        intervalLabel.frame = NSRect(x: rowStartX, y: 148, width: rowEndX - rowStartX, height: 18)
+        contentView.addSubview(intervalLabel)
+        intervalButtons = makePillRow(
+            in: contentView, values: AccountStorage.availableRefreshIntervalsHours.map(Int.init),
+            y: 120, startX: rowStartX, endX: rowEndX, action: #selector(onIntervalButtonTapped(_:))
+        )
+
+        // Renewal-due-days row
+        let renewalLabel = makeLabel("Fällige verlängern – Frist (Tage):", font: .boldSystemFont(ofSize: 13))
+        renewalLabel.frame = NSRect(x: rowStartX, y: 86, width: rowEndX - rowStartX, height: 18)
+        contentView.addSubview(renewalLabel)
+        renewalButtons = makePillRow(
+            in: contentView, values: AccountStorage.availableRenewalDueDays,
+            y: 58, startX: rowStartX, endX: rowEndX, action: #selector(onRenewalDaysButtonTapped(_:))
+        )
 
         // Close button
         let closeBtn = NSButton(title: "Schließen", target: self, action: #selector(onClose))
@@ -104,6 +128,57 @@ final class PreferencesWindowController: NSObject, NSWindowDelegate {
     private func reloadAccounts() {
         accounts = AccountStorage.shared.accounts
         tableView?.reloadData()
+        stylePills(intervalButtons, selectedTag: Int(AccountStorage.shared.refreshIntervalHours), suffix: "h")
+        stylePills(renewalButtons, selectedTag: AccountStorage.shared.renewalDueDays, suffix: "")
+    }
+
+    /// Builds a horizontal row of equal-width, evenly-spaced pill buttons spanning startX…endX.
+    private func makePillRow(in container: NSView, values: [Int], y: CGFloat,
+                             startX: CGFloat, endX: CGFloat, action: Selector) -> [NSButton] {
+        let gap: CGFloat = 8
+        let height: CGFloat = 24
+        let width = (endX - startX - gap * CGFloat(values.count - 1)) / CGFloat(values.count)
+        var buttons: [NSButton] = []
+        for (index, value) in values.enumerated() {
+            let x = startX + CGFloat(index) * (width + gap)
+            let btn = NSButton(frame: NSRect(x: x, y: y, width: width, height: height))
+            btn.isBordered = false
+            btn.wantsLayer = true
+            btn.layer?.cornerRadius = 6
+            btn.tag = value
+            btn.target = self
+            btn.action = action
+            container.addSubview(btn)
+            buttons.append(btn)
+        }
+        return buttons
+    }
+
+    /// Hintergrund nicht ausgewählter Pills — passend zu den Bezel-Buttons darüber (#ECECEC im Hellmodus).
+    /// (quaternaryLabelColor ist eine Textfarbe mit ~10 % Deckkraft und als Fläche fast unsichtbar.)
+    private static let pillUnselectedBackground = NSColor(name: nil) { appearance in
+        let isDark = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+        return isDark
+            ? NSColor(srgbRed: 0.23, green: 0.23, blue: 0.24, alpha: 1)
+            : NSColor(srgbRed: 236.0 / 255.0, green: 236.0 / 255.0, blue: 236.0 / 255.0, alpha: 1)
+    }
+
+    private func stylePills(_ buttons: [NSButton], selectedTag: Int, suffix: String) {
+        for btn in buttons {
+            let selected = btn.tag == selectedTag
+            let paragraphStyle = NSMutableParagraphStyle()
+            paragraphStyle.alignment = .center
+            btn.attributedTitle = NSAttributedString(string: "\(btn.tag)\(suffix)", attributes: [
+                .font: NSFont.systemFont(ofSize: 12, weight: .medium),
+                .foregroundColor: selected ? NSColor.white : NSColor.labelColor,
+                .paragraphStyle: paragraphStyle
+            ])
+            let bg = selected ? NSColor.controlAccentColor : Self.pillUnselectedBackground
+            // In der Appearance des Buttons auflösen, damit Hell/Dunkel korrekt greift.
+            btn.effectiveAppearance.performAsCurrentDrawingAppearance {
+                btn.layer?.backgroundColor = bg.cgColor
+            }
+        }
     }
 
     // MARK: - Actions
@@ -138,6 +213,19 @@ final class PreferencesWindowController: NSObject, NSWindowDelegate {
 
     @objc private func onClose() {
         window?.close()
+    }
+
+    @objc private func onIntervalButtonTapped(_ sender: NSButton) {
+        AccountStorage.shared.refreshIntervalHours = Double(sender.tag)
+        stylePills(intervalButtons, selectedTag: sender.tag, suffix: "h")
+        statusBarController?.refreshIntervalDidChange()
+    }
+
+    @objc private func onRenewalDaysButtonTapped(_ sender: NSButton) {
+        AccountStorage.shared.renewalDueDays = sender.tag
+        stylePills(renewalButtons, selectedTag: sender.tag, suffix: "")
+        // Rebuilds the menu so the "Fällige verlängern"-Einträge die neue Frist berücksichtigen.
+        statusBarController?.updateMenu()
     }
 
     func windowWillClose(_ notification: Notification) {

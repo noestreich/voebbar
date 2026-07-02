@@ -51,7 +51,7 @@ final class OverviewWindowController: NSObject, NSWindowDelegate {
         let toolbar = NSView()
         toolbar.translatesAutoresizingMaskIntoConstraints = false
 
-        let titleLabel = label("Alle ausgeliehenen Bücher", font: .boldSystemFont(ofSize: 14))
+        let titleLabel = label("Alle ausgeliehenen Medien", font: .boldSystemFont(ofSize: 14))
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         toolbar.addSubview(titleLabel)
 
@@ -92,12 +92,13 @@ final class OverviewWindowController: NSObject, NSWindowDelegate {
         table.allowsMultipleSelection = false
 
         let cols: [(id: String, title: String, width: CGFloat, minWidth: CGFloat)] = [
-            ("emoji",   "",            30,  30),
-            ("title",   "Titel",       280, 100),
-            ("account", "Konto",       120, 80),
-            ("due",     "Fällig am",   90,  80),
-            ("days",    "Tage",        60,  50),
-            ("library", "Bibliothek",  130, 80),
+            ("emoji",   "",              30,  30),
+            ("title",   "Titel",         240, 100),
+            ("account", "Konto",         100, 80),
+            ("due",     "Fällig am",     90,  80),
+            ("days",    "Tage",          60,  50),
+            ("renew",   "Verlängerbar",  160, 90),
+            ("library", "Bibliothek",    130, 80),
         ]
         for col in cols {
             let c = NSTableColumn(identifier: NSUserInterfaceItemIdentifier(col.id))
@@ -242,6 +243,21 @@ extension OverviewWindowController: NSTableViewDelegate {
             } else {
                 cell.stringValue = "\(days)d"
                 cell.textColor = days < 7 ? .systemRed : days <= 14 ? .systemOrange : .secondaryLabelColor
+            }
+
+        case "renew":
+            switch loan.isRenewable {
+            case .some(true):
+                cell.stringValue = "✓ verlängerbar"
+                cell.textColor = .systemGreen
+            case .some(false):
+                let reason = RenewabilityRow.shorten(loan.renewalReason)
+                cell.stringValue = reason.isEmpty ? "✗ nicht verlängerbar" : "✗ \(reason)"
+                cell.textColor = .systemRed
+                cell.toolTip = loan.renewalReason.isEmpty ? nil : loan.renewalReason
+            case .none:
+                cell.stringValue = "–"
+                cell.textColor = .secondaryLabelColor
             }
 
         case "library":
