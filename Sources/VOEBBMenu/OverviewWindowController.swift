@@ -51,7 +51,7 @@ final class OverviewWindowController: NSObject, NSWindowDelegate {
         let toolbar = NSView()
         toolbar.translatesAutoresizingMaskIntoConstraints = false
 
-        let titleLabel = label("Alle ausgeliehenen Bücher", font: .boldSystemFont(ofSize: 14))
+        let titleLabel = label("Alle ausgeliehenen Medien", font: .boldSystemFont(ofSize: 14))
         titleLabel.translatesAutoresizingMaskIntoConstraints = false
         toolbar.addSubview(titleLabel)
 

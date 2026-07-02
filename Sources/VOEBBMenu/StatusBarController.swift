@@ -276,7 +276,7 @@ final class StatusBarController: NSObject {
 
         // Bücherlist als Untermenü
         if !data.loans.isEmpty {
-            let subItem = NSMenuItem(title: "  📖  Ausgeliehene Bücher", action: nil, keyEquivalent: "")
+            let subItem = NSMenuItem(title: "  📖  Ausgeliehene Medien", action: nil, keyEquivalent: "")
             let submenu = NSMenu()
             for loan in data.loans.sorted(by: { $0.dueDate < $1.dueDate }) {
                 let short = truncate(loan.title, to: Self.maxTitleLength)
