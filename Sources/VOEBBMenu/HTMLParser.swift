@@ -127,24 +127,6 @@ enum HTMLParser {
         return (fees, cardValid)
     }
 
-    // MARK: - Renewal Result
-
-    static func parseRenewalResult(_ html: String) -> String {
-        // Look for success or error messages
-        let clean = stripHTML(html)
-        if clean.localizedCaseInsensitiveContains("wurde verlängert") ||
-           clean.localizedCaseInsensitiveContains("erfolgreich") {
-            return "Verlängerung erfolgreich"
-        }
-        if clean.localizedCaseInsensitiveContains("nicht möglich") {
-            return "Verlängerung noch nicht möglich"
-        }
-        if clean.localizedCaseInsensitiveContains("bereits verlängert") {
-            return "Bereits verlängert"
-        }
-        return "Unbekanntes Ergebnis"
-    }
-
     // MARK: - Renewability Probe ("Markierte Medien verlängerbar?")
 
     /// Parses the response of the "Markierte Medien verlängerbar?" probe. Each loan row
@@ -217,24 +199,6 @@ enum HTMLParser {
         }) ?? titleParts.first ?? ""
     }
 
-    private static func extractTDContent(_ html: String, classFragment: String) -> String? {
-        let pattern = #"<td[^>]*class="[^"]*\b"# + classFragment + #"\b[^"]*"[^>]*>(.*?)</td>"#
-        guard let m = html.range(of: pattern, options: [.regularExpression, .caseInsensitive],
-                                  range: html.startIndex..<html.endIndex) else { return nil }
-        let matchStr = String(html[m])
-        // Extract content between > and </td>
-        if let start = matchStr.range(of: ">")?.upperBound,
-           let end = matchStr.range(of: "</td>", options: .backwards)?.lowerBound {
-            return String(matchStr[start..<end])
-        }
-        return nil
-    }
-
-    private static func extractAllTDContents(_ html: String, classFragment: String) -> [String] {
-        let pattern = #"<td[^>]*class="[^"]*\b"# + classFragment + #"\b[^"]*"[^>]*>(.*?)</td>"#
-        return matchAllFirstGroups(pattern, in: html)
-    }
-
     /// All <td> contents in document order, regardless of class.
     private static func extractAllTDContents(_ html: String) -> [String] {
         matchAllFirstGroups(#"<td[^>]*>(.*?)</td>"#, in: html)
@@ -255,17 +219,22 @@ enum HTMLParser {
         return results
     }
 
+    private static let htmlEntities: [(String, String)] = [
+        ("&lt;", "<"), ("&gt;", ">"), ("&quot;", "\""), ("&#039;", "'"), ("&apos;", "'"),
+        ("&nbsp;", " "), ("&#160;", " "),
+        ("&auml;", "ä"), ("&ouml;", "ö"), ("&uuml;", "ü"),
+        ("&Auml;", "Ä"), ("&Ouml;", "Ö"), ("&Uuml;", "Ü"), ("&szlig;", "ß"),
+        ("&amp;", "&"),
+    ]
+
     static func stripHTML(_ html: String) -> String {
         var result = html
         // Remove tags
         result = result.replacingOccurrences(of: #"<[^>]+>"#, with: " ", options: .regularExpression)
-        // Decode common HTML entities
-        result = result.replacingOccurrences(of: "&amp;", with: "&")
-        result = result.replacingOccurrences(of: "&lt;", with: "<")
-        result = result.replacingOccurrences(of: "&gt;", with: ">")
-        result = result.replacingOccurrences(of: "&quot;", with: "\"")
-        result = result.replacingOccurrences(of: "&nbsp;", with: " ")
-        result = result.replacingOccurrences(of: "&#160;", with: " ")
+        // Decode common HTML entities (&amp; last, so "&amp;lt;" doesn't double-decode)
+        for (entity, char) in Self.htmlEntities {
+            result = result.replacingOccurrences(of: entity, with: char)
+        }
         // Collapse whitespace
         result = result.replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
         return result.trimmingCharacters(in: .whitespaces)

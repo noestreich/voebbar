@@ -25,26 +25,11 @@ struct Loan {
     /// Reason a blocked item can't be renewed (e.g. "Vormerkungen"); empty otherwise.
     var renewalReason: String = ""
 
-    var canRenew: Bool {
-        !renewalStatus.localizedCaseInsensitiveContains("nicht möglich") &&
-        !renewalStatus.localizedCaseInsensitiveContains("keine verlängerung") &&
-        !renewalStatus.localizedCaseInsensitiveContains("nicht verlängerbar") &&
-        !renewalStatus.localizedCaseInsensitiveContains("vormerk") &&
-        !renewalStatus.isEmpty
-    }
-
+    /// Überfällig erst ab dem Tag NACH dem Fälligkeitsdatum — am Fälligkeitstag selbst
+    /// ist das Buch noch regulär zurückgebbar/verlängerbar. (dueDate ist Mitternacht
+    /// des Fälligkeitstags, daher Vergleich gegen Tagesbeginn heute.)
     var isOverdue: Bool {
-        dueDate < Date()
-    }
-
-    /// < 7 Tage bis Rückgabe
-    var isDueSoon: Bool {
-        daysUntilDue <= 7 && !isOverdue
-    }
-
-    /// Gerade erst ausgeliehen (> 14 Tage verbleibend)
-    var isFresh: Bool {
-        daysUntilDue > 14
+        dueDate < Calendar.current.startOfDay(for: Date())
     }
 
     var daysUntilDue: Int {
@@ -66,6 +51,17 @@ struct RenewabilityRow {
     let renewable: Bool
     /// Reason a blocked item can't be renewed (e.g. "Verlängerung noch nicht möglich- Stand …"); empty if renewable.
     let reason: String
+
+    /// Reason without the trailing "- Stand <Datum>" suffix, for compact display.
+    var shortReason: String { Self.shorten(reason) }
+
+    /// "Verlängerung noch nicht möglich- Stand 01.07.2026" → "Verlängerung noch nicht möglich"
+    static func shorten(_ reason: String) -> String {
+        if let r = reason.range(of: #"\s*-\s*Stand\b.*$"#, options: .regularExpression) {
+            return String(reason[..<r.lowerBound]).trimmingCharacters(in: .whitespaces)
+        }
+        return reason.trimmingCharacters(in: .whitespaces)
+    }
 }
 
 /// Result of the two-step renewal (probe → renew only renewable items).
@@ -74,6 +70,8 @@ struct RenewalOutcome {
     let blocked: [RenewabilityRow]
     /// Set for special cases (e.g. no loans at all); otherwise nil and the message is built from renewed/blocked.
     let specialMessage: String?
+    /// Warning appended when the renewal submit could not be confirmed from the response.
+    var verificationNote: String?
 
     init(renewed: [RenewabilityRow] = [], blocked: [RenewabilityRow] = [], specialMessage: String? = nil) {
         self.renewed = renewed
@@ -95,9 +93,13 @@ struct RenewalOutcome {
             lines.append("Nicht verlängerbar:")
             for item in blocked {
                 let title = item.title.isEmpty ? "Unbekannter Titel" : item.title
-                let reason = item.reason.isEmpty ? "" : " – \(item.reason)"
+                let reason = item.shortReason.isEmpty ? "" : " – \(item.shortReason)"
                 lines.append("• \(title)\(reason)")
             }
+        }
+        if let verificationNote {
+            lines.append("")
+            lines.append("⚠️ \(verificationNote)")
         }
         return lines.joined(separator: "\n")
     }
@@ -111,20 +113,9 @@ struct AccountData {
     var lastUpdated: Date = Date()
     var error: String?
 
-    var nextDueDate: Date? { loans.map(\.dueDate).min() }
     var nextDueDateString: String? { loans.min(by: { $0.dueDate < $1.dueDate })?.dueDateString }
-    var hasOverdueFees: Bool { fees > 0 }
-    var hasOverdueLoans: Bool { loans.contains { $0.isOverdue } }
-    var hasDueSoonLoans: Bool { loans.contains { $0.isDueSoon } }
 
     var daysUntilNextDue: Int? {
         loans.map(\.daysUntilDue).filter { $0 >= 0 }.min()
     }
-}
-
-enum AppState {
-    case loading
-    case loaded([AccountData])
-    case error(String)
-    case noAccounts
 }

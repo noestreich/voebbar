@@ -251,7 +251,7 @@ extension OverviewWindowController: NSTableViewDelegate {
                 cell.stringValue = "✓ verlängerbar"
                 cell.textColor = .systemGreen
             case .some(false):
-                let reason = shortenReason(loan.renewalReason)
+                let reason = RenewabilityRow.shorten(loan.renewalReason)
                 cell.stringValue = reason.isEmpty ? "✗ nicht verlängerbar" : "✗ \(reason)"
                 cell.textColor = .systemRed
                 cell.toolTip = loan.renewalReason.isEmpty ? nil : loan.renewalReason
@@ -279,14 +279,6 @@ extension OverviewWindowController: NSTableViewDelegate {
             return v
         }
         return nil
-    }
-
-    /// "Verlängerung noch nicht möglich- Stand 01.07.2026" → "Verlängerung noch nicht möglich"
-    private func shortenReason(_ reason: String) -> String {
-        if let r = reason.range(of: #"\s*-\s*Stand\b.*$"#, options: .regularExpression) {
-            return String(reason[..<r.lowerBound]).trimmingCharacters(in: .whitespaces)
-        }
-        return reason.trimmingCharacters(in: .whitespaces)
     }
 
     /// "Friedrichshain-Kreuzberg: Bezirkszentralbibliothek Pablo Neruda"

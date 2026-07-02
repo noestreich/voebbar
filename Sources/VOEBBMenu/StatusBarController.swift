@@ -38,14 +38,18 @@ final class StatusBarController: NSObject {
     private func scheduleTimer() {
         refreshTimer?.invalidate()
         let interval = AccountStorage.shared.refreshIntervalHours * 3600
-        refreshTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
+        let timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
             self?.refresh()
         }
+        timer.tolerance = interval * 0.05
+        refreshTimer = timer
     }
 
     // MARK: - Refresh
 
     func refresh() {
+        guard !isLoading else { return }
+
         let accounts = AccountStorage.shared.accounts
         guard !accounts.isEmpty else {
             currentData = []

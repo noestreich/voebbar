@@ -26,7 +26,7 @@ final class PreferencesWindowController: NSObject, NSWindowDelegate {
     private func buildWindow() {
         let win = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: 480, height: 490),
-            styleMask: [.titled, .closable, .resizable],
+            styleMask: [.titled, .closable],
             backing: .buffered,
             defer: false
         )

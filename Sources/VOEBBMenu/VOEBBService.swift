@@ -52,14 +52,12 @@ final class VOEBBSession {
                 var feesSourceHTML = loansHTML
                 var feesRC = 4
                 do {
-                    let probeHTML = try await pressRenewalButton(
-                        appURL: appURL, fromHTML: loansHTML, referer: loansURL,
-                        buttonField: "$Button$2", focusID: "$$GFBO_7", requestCount: 4,
+                    let probe = try await probeRenewability(
+                        appURL: appURL, fromHTML: loansHTML, referer: loansURL, requestCount: 4,
                         checkboxValues: parsed.map(\.checkboxValue).filter { !$0.isEmpty }
                     )
-                    let statuses = HTMLParser.parseRenewability(probeHTML)
-                    if !statuses.isEmpty {
-                        let byCheckbox = Dictionary(statuses.map { ($0.checkboxValue, $0) },
+                    if !probe.rows.isEmpty {
+                        let byCheckbox = Dictionary(probe.rows.map { ($0.checkboxValue, $0) },
                                                     uniquingKeysWith: { first, _ in first })
                         for i in parsed.indices {
                             if let s = byCheckbox[parsed[i].checkboxValue] {
@@ -67,7 +65,7 @@ final class VOEBBSession {
                                 parsed[i].renewalReason = s.reason
                             }
                         }
-                        feesSourceHTML = probeHTML
+                        feesSourceHTML = probe.html
                         feesRC = 5
                     }
                 } catch {
@@ -130,14 +128,13 @@ final class VOEBBSession {
         }
 
         // Step 1: probe "verlängerbar?" ($Button$2) with only the candidates checked.
-        let probeHTML = try await pressRenewalButton(
-            appURL: appURL, fromHTML: loansHTML, referer: loansURL,
-            buttonField: "$Button$2", focusID: "$$GFBO_7", requestCount: 4,
+        let probe = try await probeRenewability(
+            appURL: appURL, fromHTML: loansHTML, referer: loansURL, requestCount: 4,
             checkboxValues: candidateCheckboxes
         )
         // The probe reports on the marked media; restrict to our candidate set defensively.
         let candidateSet = Set(candidateCheckboxes)
-        let statuses = HTMLParser.parseRenewability(probeHTML).filter { candidateSet.contains($0.checkboxValue) }
+        let statuses = probe.rows.filter { candidateSet.contains($0.checkboxValue) }
         let renewable = statuses.filter { $0.renewable }
         let blocked = statuses.filter { !$0.renewable }
 
@@ -146,13 +143,38 @@ final class VOEBBSession {
         }
 
         // Step 2: renew only the confirmed-renewable candidates ($Button$1).
-        _ = try await pressRenewalButton(
-            appURL: appURL, fromHTML: probeHTML, referer: appURL,
+        let resultHTML = try await pressRenewalButton(
+            appURL: appURL, fromHTML: probe.html, referer: appURL,
             buttonField: "$Button$1", focusID: "$$GFBO_4", requestCount: 5,
             checkboxValues: renewable.map(\.checkboxValue)
         )
 
-        return RenewalOutcome(renewed: renewable, blocked: blocked)
+        var outcome = RenewalOutcome(renewed: renewable, blocked: blocked)
+
+        // Sanity check: if the response renders the loans table again and its due dates are
+        // completely unchanged, the submit likely didn't take effect — warn instead of
+        // claiming success. (If the response isn't a loans table, we can't verify; stay quiet.)
+        let afterLoans = HTMLParser.parseLoans(resultHTML)
+        if !afterLoans.isEmpty,
+           afterLoans.map(\.dueDateString).sorted() == loans.map(\.dueDateString).sorted() {
+            outcome.verificationNote = "Verlängerung konnte nicht bestätigt werden – die Fälligkeitsdaten sind unverändert. Bitte Liste prüfen."
+        }
+
+        return outcome
+    }
+
+    /// Presses "Markierte Medien verlängerbar?" ($Button$2, read-only) for the given
+    /// checkboxes and parses the per-row renewability markers from the response.
+    private func probeRenewability(
+        appURL: String, fromHTML: String, referer: String, requestCount: Int,
+        checkboxValues: [String]
+    ) async throws -> (html: String, rows: [RenewabilityRow]) {
+        let html = try await pressRenewalButton(
+            appURL: appURL, fromHTML: fromHTML, referer: referer,
+            buttonField: "$Button$2", focusID: "$$GFBO_7", requestCount: requestCount,
+            checkboxValues: checkboxValues
+        )
+        return (html, HTMLParser.parseRenewability(html))
     }
 
     /// Presses one of the renewal-page buttons by re-POSTing the page's hidden fields plus the
@@ -266,16 +288,13 @@ final class VOEBBSession {
 
     // MARK: - Private: HTTP
 
-    private var lastURL = ""
-
     private func get(url: String) async throws -> String {
         var req = URLRequest(url: URL(string: url)!)
         req.addValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36", forHTTPHeaderField: "User-Agent")
         req.addValue("de-DE,de;q=0.9", forHTTPHeaderField: "Accept-Language")
         req.addValue("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", forHTTPHeaderField: "Accept")
 
-        let (data, response) = try await session.data(for: req)
-        lastURL = (response as? HTTPURLResponse)?.url?.absoluteString ?? url
+        let (data, _) = try await session.data(for: req)
         return String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1) ?? ""
     }
 
@@ -296,8 +315,7 @@ final class VOEBBSession {
             req.addValue(referer, forHTTPHeaderField: "Referer")
         }
 
-        let (data, response) = try await session.data(for: req)
-        lastURL = (response as? HTTPURLResponse)?.url?.absoluteString ?? url
+        let (data, _) = try await session.data(for: req)
         return String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1) ?? ""
     }
 
