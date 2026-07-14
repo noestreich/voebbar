@@ -8,7 +8,7 @@ Arbeitsdokument für die Einreichung. Texte können direkt in App Store Connect 
 |---|---|
 | App-Name | **Voebbar** |
 | Untertitel (Claim) | Bibo Berlin |
-| Bundle-ID | `de.voebb.menubar.ios` |
+| Bundle-ID | `de.ncls.voebbar` |
 | Primäre Kategorie | Dienstprogramme (Utilities) |
 | Sekundäre Kategorie | Bücher (Books) |
 | Altersfreigabe | 4+ |
@@ -81,7 +81,7 @@ Gerät aufnehmen (Seitentaste + Lauter). Empfohlene Motive:
 
 ## Checkliste bis zur Einreichung
 
-- [ ] App-Store-Connect: App anlegen (Name „Voebbar", Bundle-ID `de.voebb.menubar.ios`)
+- [ ] App-Store-Connect: App anlegen (Name „Voebbar", Bundle-ID `de.ncls.voebbar`)
 - [ ] Untertitel „Bibo Berlin" eintragen
 - [ ] Beschreibung + Keywords aus diesem Dokument übernehmen
 - [ ] Datenschutz-Label „Daten werden nicht erhoben" ausfüllen

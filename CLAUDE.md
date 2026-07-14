@@ -29,7 +29,7 @@ iOS (requires the iOS platform installed in Xcode):
 xcodebuild -project iOS/VOEBBApp.xcodeproj -scheme VOEBBApp -destination 'generic/platform=iOS' build
 ```
 
-or open `iOS/VOEBBApp.xcodeproj` in Xcode and run on a device. The project references the root package via a local-package reference (`relativePath = ..`); signing is automatic with team `9H7F5NMT97`, bundle id `de.voebb.menubar.ios`.
+or open `iOS/VOEBBApp.xcodeproj` in Xcode and run on a device. The project references the root package via a local-package reference (`relativePath = ..`); signing is automatic with team `9H7F5NMT97`, bundle id `de.ncls.voebbar`.
 
 `swift test` currently fails with "no tests found" — `Tests/VOEBBMenuTests` exists (Swift Testing framework, one empty stub) but `Package.swift` declares no test target. If you add real tests, wire up a `testTarget` in `Package.swift` first (against `VOEBBKit`).
 
