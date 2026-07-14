@@ -131,9 +131,17 @@ struct ContentView: View {
                     Button {
                         Task { await model.renewAll(for: data.account) }
                     } label: {
-                        Label("Alle verlängern", systemImage: "arrow.clockwise")
+                        if model.renewingCard == data.account.cardNumber {
+                            HStack(spacing: 10) {
+                                ProgressView()
+                                Text("Verlängerung wird versucht …")
+                                    .foregroundStyle(.secondary)
+                            }
+                        } else {
+                            Label("Alle verlängern", systemImage: "arrow.clockwise")
+                        }
                     }
-                    .disabled(model.isLoading)
+                    .disabled(model.isLoading || model.renewingCard != nil)
                 }
             }
         } header: {

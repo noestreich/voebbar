@@ -53,6 +53,11 @@ struct AccountsView: View {
                         await NotificationScheduler.reschedule(accountData: model.accountData, leadDays: newValue)
                     }
                 }
+
+                Section {
+                } footer: {
+                    Text("Diese App ist ein privates Projekt ohne Verbindung zum VÖBB. Sie greift auf die offizielle Webseite des Verbunds der Öffentlichen Bibliotheken Berlins (voebb.de) zu — ist diese z.B. wegen Wartungsarbeiten nicht erreichbar, funktioniert auch die App nicht. Alle Daten (Konten, Passwörter, Ausleihen) verbleiben ausschließlich auf deinem iPhone.")
+                }
             }
             .navigationTitle("Konten")
             .navigationBarTitleDisplayMode(.inline)

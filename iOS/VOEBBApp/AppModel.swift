@@ -8,6 +8,8 @@ final class AppModel: ObservableObject {
     @Published private(set) var isLoading = false
     /// 0…1 während einer Aktualisierung, sonst nil (steuert die Fortschrittsleiste).
     @Published private(set) var refreshProgress: Double?
+    /// Ausweisnummer des Kontos, für das gerade eine Verlängerung läuft, sonst nil.
+    @Published private(set) var renewingCard: String?
     @Published private(set) var lastRefreshed: Date?
     @Published var alert: AlertMessage?
 
@@ -87,13 +89,17 @@ final class AppModel: ObservableObject {
     // MARK: - Verlängern
 
     func renewAll(for account: LibraryAccount) async {
-        guard let password = AccountStorage.shared.password(for: account) else { return }
+        guard renewingCard == nil,
+              let password = AccountStorage.shared.password(for: account) else { return }
+        renewingCard = account.cardNumber
         do {
             let session = VOEBBSession(account: account)
             let outcome = try await session.renewAllLoans(password: password)
+            renewingCard = nil
             alert = AlertMessage(title: account.name, message: outcome.userMessage)
             await refresh()
         } catch {
+            renewingCard = nil
             alert = AlertMessage(title: "Fehler beim Verlängern", message: error.localizedDescription)
         }
     }
