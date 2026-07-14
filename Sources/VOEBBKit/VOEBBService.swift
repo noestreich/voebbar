@@ -1,11 +1,11 @@
 import Foundation
 
-enum VOEBBError: LocalizedError {
+public enum VOEBBError: LocalizedError {
     case loginFailed(String)
     case networkError(String)
     case parseError(String)
 
-    var errorDescription: String? {
+    public var errorDescription: String? {
         switch self {
         case .loginFailed(let msg): return "Login fehlgeschlagen: \(msg)"
         case .networkError(let msg): return "Netzwerkfehler: \(msg)"
@@ -15,12 +15,12 @@ enum VOEBBError: LocalizedError {
 }
 
 // Per-account scraping session
-final class VOEBBSession {
+public final class VOEBBSession {
     private let baseURL = "https://www.voebb.de"
     private let session: URLSession
     private let account: LibraryAccount
 
-    init(account: LibraryAccount) {
+    public init(account: LibraryAccount) {
         self.account = account
         let config = URLSessionConfiguration.ephemeral
         config.httpCookieAcceptPolicy = .always
@@ -31,7 +31,7 @@ final class VOEBBSession {
 
     // MARK: - Public API
 
-    func fetchAccountData(password: String) async throws -> AccountData {
+    public func fetchAccountData(password: String) async throws -> AccountData {
         let (appURL, overviewHTML) = try await login(password: password)
         var data = AccountData(account: account)
 
@@ -96,12 +96,12 @@ final class VOEBBSession {
     }
 
     /// Renews all renewable loans.
-    func renewAllLoans(password: String) async throws -> RenewalOutcome {
+    public func renewAllLoans(password: String) async throws -> RenewalOutcome {
         try await renewLoans(password: password) { _ in true }
     }
 
     /// Renews only loans due within `days` days (overdue included), and only those.
-    func renewDueLoans(password: String, withinDays days: Int) async throws -> RenewalOutcome {
+    public func renewDueLoans(password: String, withinDays days: Int) async throws -> RenewalOutcome {
         try await renewLoans(password: password) { $0.daysUntilDue <= days }
     }
 

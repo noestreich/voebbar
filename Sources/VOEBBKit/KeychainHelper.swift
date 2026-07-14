@@ -1,8 +1,8 @@
 import Foundation
 import Security
 
-enum KeychainHelper {
-    static func save(password: String, for cardNumber: String) {
+public enum KeychainHelper {
+    public static func save(password: String, for cardNumber: String) {
         let data = password.data(using: .utf8)!
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
@@ -14,7 +14,7 @@ enum KeychainHelper {
         SecItemAdd(query as CFDictionary, nil)
     }
 
-    static func load(for cardNumber: String) -> String? {
+    public static func load(for cardNumber: String) -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrAccount as String: cardNumber,
@@ -28,7 +28,7 @@ enum KeychainHelper {
         return String(data: data, encoding: .utf8)
     }
 
-    static func delete(for cardNumber: String) {
+    public static func delete(for cardNumber: String) {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrAccount as String: cardNumber,

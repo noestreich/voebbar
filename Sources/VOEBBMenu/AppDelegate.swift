@@ -1,4 +1,5 @@
 import AppKit
+import VOEBBKit
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     var statusBarController: StatusBarController?

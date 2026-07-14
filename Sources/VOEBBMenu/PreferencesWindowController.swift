@@ -1,4 +1,5 @@
 import AppKit
+import VOEBBKit
 
 final class PreferencesWindowController: NSObject, NSWindowDelegate {
     static let shared = PreferencesWindowController()

@@ -1,0 +1,157 @@
+import SwiftUI
+import VOEBBKit
+
+struct ContentView: View {
+    @EnvironmentObject private var model: AppModel
+    @State private var showAccounts = false
+
+    var body: some View {
+        NavigationStack {
+            Group {
+                if model.accounts.isEmpty {
+                    emptyState
+                } else {
+                    loanList
+                }
+            }
+            .navigationTitle("VÖBB")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showAccounts = true
+                    } label: {
+                        Image(systemName: "person.2")
+                    }
+                }
+            }
+            .sheet(isPresented: $showAccounts) {
+                AccountsView()
+            }
+            .alert(item: $model.alert) { alert in
+                Alert(
+                    title: Text(alert.title),
+                    message: Text(alert.message),
+                    dismissButton: .default(Text("OK"))
+                )
+            }
+            .task {
+                if model.accountData.isEmpty {
+                    await model.refresh()
+                }
+            }
+        }
+    }
+
+    private var emptyState: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "books.vertical")
+                .font(.system(size: 48))
+                .foregroundStyle(.secondary)
+            Text("Keine Konten konfiguriert")
+                .font(.headline)
+            Button("Bibliothekskarte hinzufügen") {
+                showAccounts = true
+            }
+            .buttonStyle(.borderedProminent)
+        }
+    }
+
+    private var loanList: some View {
+        List {
+            ForEach(model.accountData, id: \.account.cardNumber) { data in
+                accountSection(data)
+            }
+        }
+        .refreshable {
+            await model.refresh()
+        }
+        .overlay {
+            if model.isLoading && model.accountData.isEmpty {
+                ProgressView("Lade Daten …")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func accountSection(_ data: AccountData) -> some View {
+        Section {
+            if let error = data.error {
+                Label(error, systemImage: "exclamationmark.triangle")
+                    .foregroundStyle(.red)
+            } else if data.loans.isEmpty {
+                Text("Keine Ausleihen")
+                    .foregroundStyle(.secondary)
+            } else {
+                ForEach(data.loans.sorted(by: { $0.dueDate < $1.dueDate }), id: \.checkboxValue) { loan in
+                    LoanRow(loan: loan)
+                }
+                Button {
+                    Task { await model.renewAll(for: data.account) }
+                } label: {
+                    Label("Alle verlängern", systemImage: "arrow.clockwise")
+                }
+                .disabled(model.isLoading)
+            }
+        } header: {
+            HStack {
+                Text(data.account.name)
+                Spacer()
+                if data.fees > 0 {
+                    Text(String(format: "%.2f €", data.fees))
+                        .foregroundStyle(.red)
+                }
+                if !data.loans.isEmpty {
+                    Text("\(data.loans.count)")
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 2)
+                        .background(Capsule().fill(.quaternary))
+                }
+            }
+        }
+    }
+}
+
+struct LoanRow: View {
+    let loan: Loan
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Text(loan.bookEmoji)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(loan.title)
+                    .lineLimit(2)
+                Text(shortLibrary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                if loan.isRenewable == false, !loan.renewalReason.isEmpty {
+                    Text(RenewabilityRow.shorten(loan.renewalReason))
+                        .font(.caption2)
+                        .foregroundStyle(.orange)
+                }
+            }
+            Spacer()
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(loan.dueDateString)
+                    .font(.callout.monospacedDigit())
+                Text(loan.isOverdue ? "überfällig" : "\(loan.daysUntilDue) Tage")
+                    .font(.caption)
+                    .foregroundStyle(dueColor)
+            }
+        }
+        .padding(.vertical, 2)
+    }
+
+    private var shortLibrary: String {
+        if let colon = loan.library.lastIndex(of: ":") {
+            return String(loan.library[loan.library.index(after: colon)...])
+                .trimmingCharacters(in: .whitespaces)
+        }
+        return loan.library
+    }
+
+    private var dueColor: Color {
+        if loan.isOverdue || loan.daysUntilDue < 7 { return .red }
+        if loan.daysUntilDue <= 14 { return .orange }
+        return .secondary
+    }
+}

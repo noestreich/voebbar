@@ -1,4 +1,5 @@
 import AppKit
+import VOEBBKit
 
 final class OverviewWindowController: NSObject, NSWindowDelegate {
     static let shared = OverviewWindowController()

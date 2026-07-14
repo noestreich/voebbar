@@ -1,4 +1,5 @@
 import AppKit
+import VOEBBKit
 
 final class StatusBarController: NSObject {
     private var statusItem: NSStatusItem

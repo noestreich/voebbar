@@ -9,4 +9,6 @@ DerivedData/
 *.har
 VOEBBMenu.app/
 .claude/
+*.dmg
+*.zip
 

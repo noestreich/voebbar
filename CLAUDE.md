@@ -4,32 +4,42 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-A native macOS menu bar (status item) app that shows loan/due-date info from VÖBB (Verbund der Öffentlichen Bibliotheken Berlins) for one or more library cards. Pure AppKit, no SwiftUI, no Xcode project — built entirely via Swift Package Manager. Runs as an accessory app (`LSUIElement`, no Dock icon).
+Loan/due-date info from VÖBB (Verbund der Öffentlichen Bibliotheken Berlins) for one or more library cards, as two apps sharing one core:
+
+- **macOS menu bar app** (`Sources/VOEBBMenu`) — pure AppKit, no SwiftUI, built via Swift Package Manager. Runs as an accessory app (`LSUIElement`, no Dock icon).
+- **iOS app** (`iOS/VOEBBApp.xcodeproj` + `iOS/VOEBBApp/`) — SwiftUI, iOS 16+, draft stage.
+- **`VOEBBKit`** (`Sources/VOEBBKit`, library target) — the shared core both apps use: scraping client, HTML parser, models, account/keychain storage. All cross-app logic belongs here; its public API surface is deliberate (`public` types/members), so keep additions minimal.
 
 ## Build & run
+
+macOS:
 
 ```
 swift build                 # debug build
 swift build -c release      # release build
-```
-
-To produce a runnable `.app` bundle:
-
-```
-./build_app.sh
+./build_app.sh              # produce runnable VOEBBMenu.app
 open VOEBBMenu.app
 ```
 
-`build_app.sh` builds the release binary, assembles `VOEBBMenu.app/Contents/{MacOS,Resources}`, and writes `Info.plist` (bundle id `de.voebb.menubar`, `LSUIElement=true`, min macOS 13). It also tries to copy an icon from a hardcoded path (`/Users/nicolasoestreich/Desktop/icon.icns`) — silently skipped if that path doesn't exist on the current machine.
+`build_app.sh` builds the release binary, assembles `VOEBBMenu.app/Contents/{MacOS,Resources}`, and writes `Info.plist` (bundle id `de.voebb.menubar`, `LSUIElement=true`, min macOS 13). Icon comes from repo-relative `AppIcon.icns` (override with `ICON_SRC=…`).
 
-`swift test` currently fails with "no tests found" — `Tests/VOEBBMenuTests` exists (Swift Testing framework, one empty stub) but `Package.swift` only declares the executable target, no test target. If you add real tests, wire up a `testTarget` in `Package.swift` first.
+iOS (requires the iOS platform installed in Xcode):
+
+```
+xcodebuild -project iOS/VOEBBApp.xcodeproj -scheme VOEBBApp -destination 'generic/platform=iOS' build
+```
+
+or open `iOS/VOEBBApp.xcodeproj` in Xcode and run on a device. The project references the root package via a local-package reference (`relativePath = ..`); signing is automatic with team `9H7F5NMT97`, bundle id `de.voebb.menubar.ios`.
+
+`swift test` currently fails with "no tests found" — `Tests/VOEBBMenuTests` exists (Swift Testing framework, one empty stub) but `Package.swift` declares no test target. If you add real tests, wire up a `testTarget` in `Package.swift` first (against `VOEBBKit`).
 
 No linter/formatter is configured.
 
 ## Architecture
 
-### Entry point
-`main.swift` sets `.accessory` activation policy and hands off to `AppDelegate`, which owns a single `StatusBarController` and wires it to `PreferencesWindowController.shared`.
+### Entry points
+- macOS: `main.swift` sets `.accessory` activation policy and hands off to `AppDelegate`, which owns a single `StatusBarController` and wires it to `PreferencesWindowController.shared`.
+- iOS: `VOEBBApp.swift` (SwiftUI `@main`) owns an `AppModel` (`ObservableObject`) that mirrors the mac app's refresh/renew flows against `VOEBBKit`; views are `ContentView` (loan list grouped by account) and `AccountsView`/`AddAccountView` (account management).
 
 ### VOEBBSession — screen-scraping client (`VOEBBService.swift`)
 This is the core and most fragile part of the app. VÖBB's site (`aDISWeb`, an ADIS-based legacy system) is a form-based, session-driven web app with no public API — there is no DOM parser, everything is regex-based HTML scraping (`HTMLParser.swift`).
