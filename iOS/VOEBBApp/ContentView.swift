@@ -16,6 +16,7 @@ struct ContentView: View {
                 }
             }
             .navigationTitle("VÖBB")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
