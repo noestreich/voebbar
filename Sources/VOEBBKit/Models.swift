@@ -11,7 +11,7 @@ public struct LibraryAccount: Codable, Identifiable, Equatable {
     }
 }
 
-public struct Loan {
+public struct Loan: Codable {
     public let title: String
     public let dueDate: Date
     public let dueDateString: String
@@ -105,7 +105,7 @@ public struct RenewalOutcome {
     }
 }
 
-public struct AccountData {
+public struct AccountData: Codable {
     public let account: LibraryAccount
     public var loans: [Loan] = []
     public var fees: Double = 0

@@ -6,7 +6,13 @@ final class AppModel: ObservableObject {
     @Published private(set) var accounts: [LibraryAccount] = AccountStorage.shared.accounts
     @Published private(set) var accountData: [AccountData] = []
     @Published private(set) var isLoading = false
+    /// 0…1 während einer Aktualisierung, sonst nil (steuert die Fortschrittsleiste).
+    @Published private(set) var refreshProgress: Double?
+    @Published private(set) var lastRefreshed: Date?
     @Published var alert: AlertMessage?
+
+    private let cacheKey = "voebb_cached_data_v1"
+    private let lastRefreshKey = "voebb_last_refresh"
 
     struct AlertMessage: Identifiable {
         let id = UUID()
@@ -14,17 +20,48 @@ final class AppModel: ObservableObject {
         let message: String
     }
 
+    init() {
+        loadCache()
+    }
+
+    // MARK: - Cache (letzter Stand sofort anzeigen, dann im Hintergrund aktualisieren)
+
+    private func loadCache() {
+        if let data = UserDefaults.standard.data(forKey: cacheKey),
+           let cached = try? JSONDecoder().decode([AccountData].self, from: data) {
+            // Nur Konten anzeigen, die es noch gibt
+            let known = Set(accounts.map(\.cardNumber))
+            accountData = cached.filter { known.contains($0.account.cardNumber) }
+        }
+        lastRefreshed = UserDefaults.standard.object(forKey: lastRefreshKey) as? Date
+    }
+
+    private func saveCache() {
+        if let data = try? JSONEncoder().encode(accountData) {
+            UserDefaults.standard.set(data, forKey: cacheKey)
+        }
+        UserDefaults.standard.set(lastRefreshed, forKey: lastRefreshKey)
+    }
+
+    // MARK: - Refresh
+
     func refresh() async {
         guard !isLoading else { return }
         isLoading = true
-        defer { isLoading = false }
+        refreshProgress = 0
+        defer {
+            isLoading = false
+            refreshProgress = nil
+        }
 
+        let accounts = self.accounts
         var results: [AccountData] = []
-        for account in accounts {
+        for (index, account) in accounts.enumerated() {
             guard let password = AccountStorage.shared.password(for: account) else {
                 var data = AccountData(account: account)
                 data.error = "Kein Passwort gespeichert"
                 results.append(data)
+                refreshProgress = Double(index + 1) / Double(accounts.count)
                 continue
             }
             do {
@@ -35,9 +72,26 @@ final class AppModel: ObservableObject {
                 data.error = error.localizedDescription
                 results.append(data)
             }
+            refreshProgress = Double(index + 1) / Double(accounts.count)
         }
+
+        // Leiste kurz voll stehen lassen, dann die sichtbaren Daten austauschen
+        try? await Task.sleep(nanoseconds: 300_000_000)
         accountData = results
+        lastRefreshed = Date()
+        saveCache()
     }
+
+    var lastRefreshedText: String {
+        guard let lastRefreshed else { return "Aktualisiere …" }
+        let formatter = RelativeDateTimeFormatter()
+        formatter.locale = Locale(identifier: "de_DE")
+        formatter.unitsStyle = .short
+        let ago = formatter.localizedString(for: lastRefreshed, relativeTo: Date())
+        return "Stand \(ago) – aktualisiere …"
+    }
+
+    // MARK: - Verlängern
 
     func renewAll(for account: LibraryAccount) async {
         guard let password = AccountStorage.shared.password(for: account) else { return }
@@ -50,6 +104,8 @@ final class AppModel: ObservableObject {
             alert = AlertMessage(title: "Fehler beim Verlängern", message: error.localizedDescription)
         }
     }
+
+    // MARK: - Konten
 
     func addAccount(name: String, cardNumber: String, password: String) {
         AccountStorage.shared.add(LibraryAccount(name: name, cardNumber: cardNumber), password: password)
@@ -66,5 +122,6 @@ final class AppModel: ObservableObject {
         AccountStorage.shared.remove(account)
         accounts = AccountStorage.shared.accounts
         accountData.removeAll { $0.account.cardNumber == account.cardNumber }
+        saveCache()
     }
 }

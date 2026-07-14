@@ -36,9 +36,7 @@ struct ContentView: View {
                 )
             }
             .task {
-                if model.accountData.isEmpty {
-                    await model.refresh()
-                }
+                await model.refresh()
             }
         }
     }
@@ -66,11 +64,34 @@ struct ContentView: View {
         .refreshable {
             await model.refresh()
         }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            if let progress = model.refreshProgress {
+                refreshBanner(progress)
+            }
+        }
+        .animation(.easeInOut(duration: 0.25), value: model.refreshProgress == nil)
         .overlay {
             if model.isLoading && model.accountData.isEmpty {
                 ProgressView("Lade Daten …")
             }
         }
+    }
+
+    /// Schmale Leiste am oberen Rand: Fortschritt der Hintergrund-Aktualisierung
+    /// plus Hinweis, von wann der angezeigte Stand ist.
+    private func refreshBanner(_ progress: Double) -> some View {
+        VStack(spacing: 4) {
+            ProgressView(value: progress)
+                .progressViewStyle(.linear)
+            Text(model.lastRefreshedText)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 6)
+        .background(.bar)
+        .transition(.move(edge: .top).combined(with: .opacity))
     }
 
     @ViewBuilder
