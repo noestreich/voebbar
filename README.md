@@ -1,8 +1,11 @@
 # voebbar
 
-macOS-Menüleisten-App (AppKit, Swift Package Manager, macOS 13+) für die Ausleihen des
-**[VÖBB](https://www.voebb.de/)** (Verbund der Öffentlichen Bibliotheken Berlins). Zeigt
-Ausleihen, Fälligkeiten und Gebühren mehrerer Bibliothekskarten – und verlängert auf Wunsch.
+Ausleihen, Fälligkeiten und Gebühren mehrerer Bibliothekskarten des
+**[VÖBB](https://www.voebb.de/)** (Verbund der Öffentlichen Bibliotheken Berlins) – mit
+Verlängerung auf Knopfdruck. Zwei Apps, ein gemeinsamer Kern (`VOEBBKit`):
+
+- **macOS-Menüleisten-App** (AppKit, Swift Package Manager, macOS 13+)
+- **iOS-App „Voebbar"** (SwiftUI, iOS 16+, `iOS/VOEBBApp.xcodeproj`)
 
 ![VÖBB Bibliothek](assets/bibo-1.jpg)
 
@@ -28,15 +31,28 @@ Ausleihen, Fälligkeiten und Gebühren mehrerer Bibliothekskarten – und verlä
 - Konfigurierbares Intervall (Standard: 4 Stunden)
 - Stale-Prüfung beim Öffnen des Menüs
 
-## Bauen & starten
+## iOS-App „Voebbar"
+
+Die iOS-App bringt die Ausleihen aufs iPhone: Liste aller Medien gruppiert nach Konto
+(ein-/ausklappbar), Ampelfarben nach Fälligkeit, Verlängern pro Konto, Erinnerung vor dem
+nächsten Rückgabedatum (konfigurierbar), Barcode-Scan der Ausweisnummer per Kamera und
+Offline-Anzeige des letzten Stands mit Hintergrund-Aktualisierung.
+
+```sh
+open iOS/VOEBBApp.xcodeproj   # in Xcode öffnen, iPhone wählen, Run
+```
+
+Alle Daten bleiben auf dem Gerät — Details in der [Datenschutzerklärung](PRIVACY.md).
+
+## Bauen & starten (macOS)
 
 ```sh
 ./build_app.sh   # erzeugt VOEBBMenu.app
 open VOEBBMenu.app
 ```
 
-Läuft als Accessory-App (`LSUIElement`, kein Dock-Icon). Xcode wird nicht benötigt —
-nur die Xcode-Kommandozeilen-Tools (`xcode-select --install`).
+Läuft als Accessory-App (`LSUIElement`, kein Dock-Icon). Xcode wird für die Mac-App nicht
+benötigt — nur die Xcode-Kommandozeilen-Tools (`xcode-select --install`).
 
 ## Erste Schritte
 
