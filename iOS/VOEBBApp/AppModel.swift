@@ -80,6 +80,8 @@ final class AppModel: ObservableObject {
         accountData = results
         lastRefreshed = Date()
         saveCache()
+
+        await NotificationScheduler.reschedule(accountData: accountData, leadDays: NotificationScheduler.leadDays)
     }
 
     var lastRefreshedText: String {

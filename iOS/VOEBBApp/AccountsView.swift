@@ -6,6 +6,7 @@ struct AccountsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var showAdd = false
     @State private var editingAccount: LibraryAccount?
+    @AppStorage(NotificationScheduler.leadDaysKey) private var notificationLeadDays = NotificationScheduler.defaultLeadDays
 
     var body: some View {
         NavigationStack {
@@ -32,6 +33,24 @@ struct AccountsView: View {
                 .onDelete { offsets in
                     for offset in offsets {
                         model.removeAccount(model.accounts[offset])
+                    }
+                }
+
+                Section {
+                    Picker("Erinnerung", selection: $notificationLeadDays) {
+                        Text("Aus").tag(0)
+                        Text("1 Tag vorher").tag(1)
+                        Text("3 Tage vorher").tag(3)
+                        Text("1 Woche vorher").tag(7)
+                    }
+                } header: {
+                    Text("Benachrichtigung")
+                } footer: {
+                    Text("Erinnert dich morgens um 9 Uhr vor dem nächstgelegenen Rückgabedatum.")
+                }
+                .onChange(of: notificationLeadDays) { newValue in
+                    Task {
+                        await NotificationScheduler.reschedule(accountData: model.accountData, leadDays: newValue)
                     }
                 }
             }

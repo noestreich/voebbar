@@ -13,6 +13,7 @@
 		AA0000000000000000000104 /* AccountsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000204 /* AccountsView.swift */; };
 		AA0000000000000000000105 /* VOEBBKit in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000301 /* VOEBBKit */; };
 		AA0000000000000000000106 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000206 /* Assets.xcassets */; };
+		AA0000000000000000000107 /* NotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000207 /* NotificationScheduler.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -22,6 +23,7 @@
 		AA0000000000000000000204 /* AccountsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountsView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000205 /* VOEBBApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VOEBBApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA0000000000000000000206 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		AA0000000000000000000207 /* NotificationScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationScheduler.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -51,6 +53,7 @@
 				AA0000000000000000000202 /* AppModel.swift */,
 				AA0000000000000000000203 /* ContentView.swift */,
 				AA0000000000000000000204 /* AccountsView.swift */,
+				AA0000000000000000000207 /* NotificationScheduler.swift */,
 				AA0000000000000000000206 /* Assets.xcassets */,
 			);
 			path = VOEBBApp;
@@ -144,6 +147,7 @@
 				AA0000000000000000000102 /* AppModel.swift in Sources */,
 				AA0000000000000000000103 /* ContentView.swift in Sources */,
 				AA0000000000000000000104 /* AccountsView.swift in Sources */,
+				AA0000000000000000000107 /* NotificationScheduler.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
