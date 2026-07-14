@@ -56,6 +56,12 @@ final class AppModel: ObservableObject {
         accounts = AccountStorage.shared.accounts
     }
 
+    func updateAccount(_ old: LibraryAccount, name: String, cardNumber: String, password: String) {
+        let new = LibraryAccount(name: name, cardNumber: cardNumber)
+        AccountStorage.shared.update(old, with: new, password: password)
+        accounts = AccountStorage.shared.accounts
+    }
+
     func removeAccount(_ account: LibraryAccount) {
         AccountStorage.shared.remove(account)
         accounts = AccountStorage.shared.accounts

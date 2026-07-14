@@ -55,6 +55,23 @@ public final class AccountStorage {
         KeychainHelper.save(password: password, for: account.cardNumber)
     }
 
+    /// Ersetzt ein bestehendes Konto an Ort und Stelle (Reihenfolge bleibt erhalten).
+    /// Bei geänderter Ausweisnummer wird der alte Keychain-Eintrag entfernt.
+    public func update(_ old: LibraryAccount, with new: LibraryAccount, password: String) {
+        var current = accounts
+        if let idx = current.firstIndex(where: { $0.cardNumber == old.cardNumber }) {
+            current[idx] = new
+        } else {
+            current.removeAll { $0.cardNumber == new.cardNumber }
+            current.append(new)
+        }
+        accounts = current
+        if old.cardNumber != new.cardNumber {
+            KeychainHelper.delete(for: old.cardNumber)
+        }
+        KeychainHelper.save(password: password, for: new.cardNumber)
+    }
+
     public func remove(_ account: LibraryAccount) {
         accounts.removeAll { $0.cardNumber == account.cardNumber }
         KeychainHelper.delete(for: account.cardNumber)

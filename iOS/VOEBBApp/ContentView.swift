@@ -4,6 +4,7 @@ import VOEBBKit
 struct ContentView: View {
     @EnvironmentObject private var model: AppModel
     @State private var showAccounts = false
+    @State private var collapsedAccounts: Set<String> = []
 
     var body: some View {
         NavigationStack {
@@ -74,40 +75,75 @@ struct ContentView: View {
 
     @ViewBuilder
     private func accountSection(_ data: AccountData) -> some View {
+        let isCollapsed = collapsedAccounts.contains(data.account.cardNumber)
+
         Section {
-            if let error = data.error {
-                Label(error, systemImage: "exclamationmark.triangle")
-                    .foregroundStyle(.red)
-            } else if data.loans.isEmpty {
-                Text("Keine Ausleihen")
-                    .foregroundStyle(.secondary)
-            } else {
-                ForEach(data.loans.sorted(by: { $0.dueDate < $1.dueDate }), id: \.checkboxValue) { loan in
-                    LoanRow(loan: loan)
+            if !isCollapsed {
+                if let error = data.error {
+                    Label(error, systemImage: "exclamationmark.triangle")
+                        .foregroundStyle(.red)
+                } else if data.loans.isEmpty {
+                    Text("Keine Ausleihen")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ForEach(data.loans.sorted(by: { $0.dueDate < $1.dueDate }), id: \.checkboxValue) { loan in
+                        LoanRow(loan: loan)
+                    }
+                    Button {
+                        Task { await model.renewAll(for: data.account) }
+                    } label: {
+                        Label("Alle verlängern", systemImage: "arrow.clockwise")
+                    }
+                    .disabled(model.isLoading)
                 }
-                Button {
-                    Task { await model.renewAll(for: data.account) }
-                } label: {
-                    Label("Alle verlängern", systemImage: "arrow.clockwise")
-                }
-                .disabled(model.isLoading)
             }
         } header: {
-            HStack {
-                Text(data.account.name)
-                Spacer()
-                if data.fees > 0 {
-                    Text(String(format: "%.2f €", data.fees))
-                        .foregroundStyle(.red)
+            Button {
+                withAnimation {
+                    if isCollapsed {
+                        collapsedAccounts.remove(data.account.cardNumber)
+                    } else {
+                        collapsedAccounts.insert(data.account.cardNumber)
+                    }
                 }
-                if !data.loans.isEmpty {
-                    Text("\(data.loans.count)")
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 2)
-                        .background(Capsule().fill(.quaternary))
+            } label: {
+                HStack {
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .rotationEffect(.degrees(isCollapsed ? 0 : 90))
+                        .foregroundStyle(.secondary)
+                    Text(data.account.name)
+                    Spacer()
+                    if data.fees > 0 {
+                        Text(String(format: "%.2f €", data.fees))
+                            .foregroundStyle(.red)
+                    }
+                    if !data.loans.isEmpty {
+                        loanCountBadge(data)
+                    }
                 }
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
         }
+    }
+
+    /// Zahl der Ausleihen, eingefärbt nach dem dringlichsten Medium:
+    /// rot wenn ein 📕 dabei ist, orange bei 📙, sonst grün.
+    private func loanCountBadge(_ data: AccountData) -> some View {
+        let color = urgencyColor(data)
+        return Text("\(data.loans.count)")
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(color)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 2)
+            .background(Capsule().fill(color.opacity(0.15)))
+    }
+
+    private func urgencyColor(_ data: AccountData) -> Color {
+        if data.loans.contains(where: { $0.isOverdue || $0.daysUntilDue < 7 }) { return .red }
+        if data.loans.contains(where: { $0.daysUntilDue <= 14 }) { return .orange }
+        return .green
     }
 }
 

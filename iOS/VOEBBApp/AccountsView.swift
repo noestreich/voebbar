@@ -5,16 +5,28 @@ struct AccountsView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
     @State private var showAdd = false
+    @State private var editingAccount: LibraryAccount?
 
     var body: some View {
         NavigationStack {
             List {
                 ForEach(model.accounts) { account in
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(account.name)
-                        Text(account.cardNumber)
-                            .font(.caption.monospaced())
-                            .foregroundStyle(.secondary)
+                    Button {
+                        editingAccount = account
+                    } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(account.name)
+                                    .foregroundStyle(.primary)
+                                Text(account.cardNumber)
+                                    .font(.caption.monospaced())
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(.tertiary)
+                        }
                     }
                 }
                 .onDelete { offsets in
@@ -38,19 +50,35 @@ struct AccountsView: View {
                 }
             }
             .sheet(isPresented: $showAdd) {
-                AddAccountView()
+                AccountFormView(account: nil)
+            }
+            .sheet(item: $editingAccount) { account in
+                AccountFormView(account: account)
             }
         }
     }
 }
 
-struct AddAccountView: View {
+/// Formular zum Anlegen (account == nil) oder Bearbeiten eines Kontos.
+struct AccountFormView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
 
-    @State private var name = ""
-    @State private var cardNumber = ""
-    @State private var password = ""
+    let account: LibraryAccount?
+
+    @State private var name: String
+    @State private var cardNumber: String
+    @State private var password: String
+    @State private var showPassword = false
+
+    init(account: LibraryAccount?) {
+        self.account = account
+        _name = State(initialValue: account?.name ?? "")
+        _cardNumber = State(initialValue: account?.cardNumber ?? "")
+        // Beim Bearbeiten das gespeicherte Passwort vorbefüllen,
+        // damit Tippfehler direkt korrigiert werden können.
+        _password = State(initialValue: account.flatMap { AccountStorage.shared.password(for: $0) } ?? "")
+    }
 
     private var isValid: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty &&
@@ -68,13 +96,30 @@ struct AddAccountView: View {
                         .textContentType(.username)
                 }
                 Section {
-                    SecureField("Passwort", text: $password)
+                    HStack {
+                        Group {
+                            if showPassword {
+                                TextField("Passwort", text: $password)
+                                    .textInputAutocapitalization(.never)
+                                    .autocorrectionDisabled()
+                            } else {
+                                SecureField("Passwort", text: $password)
+                            }
+                        }
                         .textContentType(.password)
+                        Button {
+                            showPassword.toggle()
+                        } label: {
+                            Image(systemName: showPassword ? "eye.slash" : "eye")
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.borderless)
+                    }
                 } footer: {
                     Text("Das Passwort wird ausschließlich im Schlüsselbund dieses Geräts gespeichert.")
                 }
             }
-            .navigationTitle("Karte hinzufügen")
+            .navigationTitle(account == nil ? "Karte hinzufügen" : "Konto bearbeiten")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
@@ -82,11 +127,13 @@ struct AddAccountView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Sichern") {
-                        model.addAccount(
-                            name: name.trimmingCharacters(in: .whitespaces),
-                            cardNumber: cardNumber.trimmingCharacters(in: .whitespaces),
-                            password: password
-                        )
+                        let trimmedName = name.trimmingCharacters(in: .whitespaces)
+                        let trimmedCard = cardNumber.trimmingCharacters(in: .whitespaces)
+                        if let account {
+                            model.updateAccount(account, name: trimmedName, cardNumber: trimmedCard, password: password)
+                        } else {
+                            model.addAccount(name: trimmedName, cardNumber: trimmedCard, password: password)
+                        }
                         dismiss()
                         Task { await model.refresh() }
                     }
