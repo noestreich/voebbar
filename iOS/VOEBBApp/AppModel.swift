@@ -84,15 +84,6 @@ final class AppModel: ObservableObject {
         await NotificationScheduler.reschedule(accountData: accountData, leadDays: NotificationScheduler.leadDays)
     }
 
-    var lastRefreshedText: String {
-        guard let lastRefreshed else { return "Aktualisiere …" }
-        let formatter = RelativeDateTimeFormatter()
-        formatter.locale = Locale(identifier: "de_DE")
-        formatter.unitsStyle = .short
-        let ago = formatter.localizedString(for: lastRefreshed, relativeTo: Date())
-        return "Stand \(ago) – aktualisiere …"
-    }
-
     // MARK: - Verlängern
 
     func renewAll(for account: LibraryAccount) async {

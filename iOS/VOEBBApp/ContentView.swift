@@ -65,9 +65,7 @@ struct ContentView: View {
             await model.refresh()
         }
         .safeAreaInset(edge: .top, spacing: 0) {
-            if let progress = model.refreshProgress {
-                refreshBanner(progress)
-            }
+            statusBanner
         }
         .animation(.easeInOut(duration: 0.25), value: model.refreshProgress == nil)
         .overlay {
@@ -77,21 +75,40 @@ struct ContentView: View {
         }
     }
 
-    /// Schmale Leiste am oberen Rand: Fortschritt der Hintergrund-Aktualisierung
-    /// plus Hinweis, von wann der angezeigte Stand ist.
-    private func refreshBanner(_ progress: Double) -> some View {
-        VStack(spacing: 4) {
-            ProgressView(value: progress)
-                .progressViewStyle(.linear)
-            Text(model.lastRefreshedText)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
+    /// Schmale Leiste am oberen Rand: dauerhaft der Zeitpunkt der letzten
+    /// Aktualisierung, während eines Refresh zusätzlich der Fortschrittsbalken.
+    @ViewBuilder
+    private var statusBanner: some View {
+        if model.refreshProgress != nil || model.lastRefreshed != nil {
+            VStack(spacing: 4) {
+                if let progress = model.refreshProgress {
+                    ProgressView(value: progress)
+                        .progressViewStyle(.linear)
+                }
+                // Minütlich neu rendern, damit die relative Zeitangabe nicht veraltet
+                TimelineView(.periodic(from: .now, by: 60)) { _ in
+                    Text(statusText)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 6)
+            .background(.bar)
         }
-        .padding(.horizontal)
-        .padding(.vertical, 6)
-        .background(.bar)
-        .transition(.move(edge: .top).combined(with: .opacity))
+    }
+
+    private var statusText: String {
+        let isRefreshing = model.refreshProgress != nil
+        guard let date = model.lastRefreshed else {
+            return isRefreshing ? "Aktualisiere …" : ""
+        }
+        let formatter = RelativeDateTimeFormatter()
+        formatter.locale = Locale(identifier: "de_DE")
+        formatter.unitsStyle = .short
+        let ago = formatter.localizedString(for: date, relativeTo: Date())
+        return isRefreshing ? "Stand \(ago) – aktualisiere …" : "Zuletzt aktualisiert \(ago)"
     }
 
     @ViewBuilder
