@@ -26,15 +26,30 @@ final class StatusBarController: NSObject {
 
     func startRefreshing() {
         refresh()
-        // Alle 4 Stunden automatisch aktualisieren
-        refreshTimer = Timer.scheduledTimer(withTimeInterval: 4 * 3600, repeats: true) { [weak self] _ in
+        scheduleTimer()
+    }
+
+    /// Startet den automatischen Aktualisierungs-Timer neu, z.B. nachdem das Intervall
+    /// in den Einstellungen geändert wurde.
+    func refreshIntervalDidChange() {
+        scheduleTimer()
+    }
+
+    private func scheduleTimer() {
+        refreshTimer?.invalidate()
+        let interval = AccountStorage.shared.refreshIntervalHours * 3600
+        let timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
             self?.refresh()
         }
+        timer.tolerance = interval * 0.05
+        refreshTimer = timer
     }
 
     // MARK: - Refresh
 
     func refresh() {
+        guard !isLoading else { return }
+
         let accounts = AccountStorage.shared.accounts
         guard !accounts.isEmpty else {
             currentData = []
@@ -78,15 +93,33 @@ final class StatusBarController: NSObject {
     }
 
     func renewAll(for accountData: AccountData) {
+        performRenewal(for: accountData, title: accountData.account.name) { session, password in
+            try await session.renewAllLoans(password: password)
+        }
+    }
+
+    /// Verlängert für ein Konto nur die demnächst fälligen Bücher (und nur die).
+    func renewDueSoon(for accountData: AccountData) {
+        let days = AccountStorage.shared.renewalDueDays
+        performRenewal(for: accountData, title: "\(accountData.account.name) – fällige verlängern") { session, password in
+            try await session.renewDueLoans(password: password, withinDays: days)
+        }
+    }
+
+    private func performRenewal(
+        for accountData: AccountData,
+        title: String,
+        _ run: @escaping (VOEBBSession, String) async throws -> RenewalOutcome
+    ) {
         guard let password = AccountStorage.shared.password(for: accountData.account) else { return }
 
         Task {
             await MainActor.run { self.updateButtonForLoading() }
-            let voebbSession = VOEBBSession(account: accountData.account)
+            let session = VOEBBSession(account: accountData.account)
             do {
-                let result = try await voebbSession.renewAllLoans(password: password)
+                let outcome = try await run(session, password)
                 await MainActor.run {
-                    self.showAlert(title: accountData.account.name, message: result)
+                    self.showAlert(title: title, message: outcome.userMessage)
                     self.refresh()
                 }
             } catch {
@@ -225,8 +258,16 @@ final class StatusBarController: NSObject {
             add(to: menu, title: "  ✅  Keine Gebühren", enabled: false)
         }
 
-        // Verlängern-Button
+        // Verlängern-Buttons
         if !data.loans.isEmpty {
+            let days = AccountStorage.shared.renewalDueDays
+            if data.loans.contains(where: { $0.daysUntilDue <= days }) {
+                let dueItem = NSMenuItem(title: "  ↺  Fällige verlängern (≤ \(days) Tage)", action: #selector(onRenewDue(_:)), keyEquivalent: "")
+                dueItem.target = self
+                dueItem.representedObject = data.account.cardNumber
+                menu.addItem(dueItem)
+            }
+
             let renewItem = NSMenuItem(title: "  ↺  Alle verlängern", action: #selector(onRenew(_:)), keyEquivalent: "")
             renewItem.target = self
             renewItem.representedObject = data.account.cardNumber
@@ -235,7 +276,7 @@ final class StatusBarController: NSObject {
 
         // Bücherlist als Untermenü
         if !data.loans.isEmpty {
-            let subItem = NSMenuItem(title: "  📖  Ausgeliehene Bücher", action: nil, keyEquivalent: "")
+            let subItem = NSMenuItem(title: "  📖  Ausgeliehene Medien", action: nil, keyEquivalent: "")
             let submenu = NSMenu()
             for loan in data.loans.sorted(by: { $0.dueDate < $1.dueDate }) {
                 let short = truncate(loan.title, to: Self.maxTitleLength)
@@ -303,6 +344,13 @@ final class StatusBarController: NSObject {
         renewAll(for: data)
     }
 
+    @objc private func onRenewDue(_ sender: NSMenuItem) {
+        guard let cardNumber = sender.representedObject as? String,
+              let data = currentData.first(where: { $0.account.cardNumber == cardNumber })
+        else { return }
+        renewDueSoon(for: data)
+    }
+
     private func showAlert(title: String, message: String) {
         let alert = NSAlert()
         alert.messageText = title
@@ -315,9 +363,9 @@ final class StatusBarController: NSObject {
 
 extension StatusBarController: NSMenuDelegate {
     func menuWillOpen(_ menu: NSMenu) {
-        // Aktualisieren wenn Daten älter als 4 Stunden
+        // Aktualisieren wenn Daten älter als das eingestellte Intervall
         if let lastUpdate = currentData.first?.lastUpdated,
-           Date().timeIntervalSince(lastUpdate) > 4 * 3600 {
+           Date().timeIntervalSince(lastUpdate) > AccountStorage.shared.refreshIntervalHours * 3600 {
             refresh()
         }
     }
