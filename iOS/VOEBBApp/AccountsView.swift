@@ -89,6 +89,7 @@ struct AccountFormView: View {
     @State private var cardNumber: String
     @State private var password: String
     @State private var showPassword = false
+    @State private var showScanner = false
 
     init(account: LibraryAccount?) {
         self.account = account
@@ -110,9 +111,19 @@ struct AccountFormView: View {
             Form {
                 Section("Konto") {
                     TextField("Name (z.B. Nicolas)", text: $name)
-                    TextField("Ausweisnummer", text: $cardNumber)
-                        .keyboardType(.numberPad)
-                        .textContentType(.username)
+                    HStack {
+                        TextField("Ausweisnummer", text: $cardNumber)
+                            .keyboardType(.numberPad)
+                            .textContentType(.username)
+                        Button {
+                            showScanner = true
+                        } label: {
+                            Image(systemName: "barcode.viewfinder")
+                                .foregroundStyle(.tint)
+                        }
+                        .buttonStyle(.borderless)
+                        .accessibilityLabel("Barcode scannen")
+                    }
                 }
                 Section {
                     HStack {
@@ -140,6 +151,31 @@ struct AccountFormView: View {
             }
             .navigationTitle(account == nil ? "Karte hinzufügen" : "Konto bearbeiten")
             .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $showScanner) {
+                NavigationStack {
+                    Group {
+                        if BarcodeScannerView.isSupported {
+                            BarcodeScannerView { code in
+                                // Ausweisnummern sind numerisch; Start-/Stoppzeichen
+                                // des Barcodes (z.B. bei Codabar) herausfiltern.
+                                cardNumber = code.filter(\.isNumber)
+                                showScanner = false
+                            }
+                        } else {
+                            Text("Barcode-Scan wird auf diesem Gerät nicht unterstützt oder die Kamera ist nicht verfügbar.")
+                                .multilineTextAlignment(.center)
+                                .padding()
+                        }
+                    }
+                    .navigationTitle("Barcode scannen")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button("Abbrechen") { showScanner = false }
+                        }
+                    }
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button("Abbrechen") { dismiss() }

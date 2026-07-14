@@ -14,6 +14,7 @@
 		AA0000000000000000000105 /* VOEBBKit in Frameworks */ = {isa = PBXBuildFile; productRef = AA0000000000000000000301 /* VOEBBKit */; };
 		AA0000000000000000000106 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000206 /* Assets.xcassets */; };
 		AA0000000000000000000107 /* NotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000207 /* NotificationScheduler.swift */; };
+		AA0000000000000000000108 /* BarcodeScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000208 /* BarcodeScannerView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -24,6 +25,7 @@
 		AA0000000000000000000205 /* VOEBBApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = VOEBBApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		AA0000000000000000000206 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AA0000000000000000000207 /* NotificationScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationScheduler.swift; sourceTree = "<group>"; };
+		AA0000000000000000000208 /* BarcodeScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarcodeScannerView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -54,6 +56,7 @@
 				AA0000000000000000000203 /* ContentView.swift */,
 				AA0000000000000000000204 /* AccountsView.swift */,
 				AA0000000000000000000207 /* NotificationScheduler.swift */,
+				AA0000000000000000000208 /* BarcodeScannerView.swift */,
 				AA0000000000000000000206 /* Assets.xcassets */,
 			);
 			path = VOEBBApp;
@@ -148,6 +151,7 @@
 				AA0000000000000000000103 /* ContentView.swift in Sources */,
 				AA0000000000000000000104 /* AccountsView.swift in Sources */,
 				AA0000000000000000000107 /* NotificationScheduler.swift in Sources */,
+				AA0000000000000000000108 /* BarcodeScannerView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -209,6 +213,7 @@
 				DEVELOPMENT_TEAM = 9H7F5NMT97;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Die Kamera wird zum Scannen des Barcodes auf dem Bibliotheksausweis verwendet.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -236,6 +241,7 @@
 				DEVELOPMENT_TEAM = 9H7F5NMT97;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Die Kamera wird zum Scannen des Barcodes auf dem Bibliotheksausweis verwendet.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
