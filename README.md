@@ -7,9 +7,18 @@ Verlängerung auf Knopfdruck. Zwei Apps, ein gemeinsamer Kern (`VOEBBKit`):
 - **iOS-App „Voebbar"** (SwiftUI, iOS 16+)
 - **macOS-Menüleisten-App** (AppKit, Swift Package Manager, macOS 13+)
 
+## Download
+
+- 📲 **iPhone:** [Voebbar im App Store laden](https://apps.apple.com/de/app/voebbar/id6790911430)
+- 💻 **Mac:** [VOEBBMenu.dmg aus dem neuesten Release herunterladen](https://github.com/noestreich/voebbar/releases/latest) —
+  dort unter „Assets" die Datei `VOEBBMenu-x.x.dmg` anklicken, öffnen und die App in den
+  Programme-Ordner ziehen (signiert & notarisiert, kein Gatekeeper-Dialog)
+
 ![VÖBB Bibliothek](assets/bibo-1.jpg)
 
 ## iOS-App „Voebbar"
+
+**[➡️ Voebbar im App Store](https://apps.apple.com/de/app/voebbar/id6790911430)**
 
 ![Voebbar auf dem iPhone](assets/ios-screenshot.png)
 
@@ -38,6 +47,8 @@ Verlängerung auf Knopfdruck. Zwei Apps, ein gemeinsamer Kern (`VOEBBKit`):
 - Keine Server, kein Tracking, keine Werbung — Details in der
   [Datenschutzerklärung](PRIVACY.md)
 
+Selbst bauen statt App Store:
+
 ```sh
 open iOS/VOEBBApp.xcodeproj   # in Xcode öffnen, iPhone wählen, Run
 ```
@@ -58,6 +69,8 @@ open iOS/VOEBBApp.xcodeproj   # in Xcode öffnen, iPhone wählen, Run
 **Mehrere Konten & Refresh**
 - Unbegrenzt viele Bibliothekskarten, Passwörter nur im macOS-Schlüsselbund
 - Konfigurierbares Auto-Refresh-Intervall und Stale-Prüfung beim Öffnen des Menüs
+
+**[⬇️ Fertige App herunterladen](https://github.com/noestreich/voebbar/releases/latest)** (DMG unter „Assets") — oder selbst bauen:
 
 ```sh
 ./build_app.sh   # erzeugt VOEBBMenu.app
