@@ -15,7 +15,7 @@ struct ContentView: View {
                     loanList
                 }
             }
-            .navigationTitle("VÖBB")
+            .navigationTitle("VÖPP")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
@@ -161,13 +161,9 @@ struct ContentView: View {
                         .foregroundStyle(.secondary)
                     Text(data.account.name)
                     Spacer()
-                    if data.fees > 0 {
-                        Text(String(format: "%.2f €", data.fees))
-                            .foregroundStyle(.red)
-                    }
-                    if !data.loans.isEmpty {
-                        loanCountBadge(data)
-                    }
+                    Text(String(format: "%.2f €", locale: Locale(identifier: "de_DE"), data.fees))
+                        .foregroundStyle(data.fees > 0 ? .red : .secondary)
+                    loanCountBadge(data)
                 }
                 .contentShape(Rectangle())
             }
@@ -176,7 +172,7 @@ struct ContentView: View {
     }
 
     /// Zahl der Ausleihen, eingefärbt nach dem dringlichsten Medium:
-    /// rot wenn ein 📕 dabei ist, orange bei 📙, sonst grün.
+    /// rot wenn ein 📕 dabei ist, orange bei 📙, grün sonst — grau bei 0 Ausleihen.
     private func loanCountBadge(_ data: AccountData) -> some View {
         let color = urgencyColor(data)
         return Text("\(data.loans.count)")
@@ -188,6 +184,7 @@ struct ContentView: View {
     }
 
     private func urgencyColor(_ data: AccountData) -> Color {
+        guard !data.loans.isEmpty else { return .secondary }
         if data.loans.contains(where: { $0.isOverdue || $0.daysUntilDue < 7 }) { return .red }
         if data.loans.contains(where: { $0.daysUntilDue <= 14 }) { return .orange }
         return .green

@@ -1,13 +1,13 @@
-# Datenschutzerklärung — Voebbar
+# Datenschutzerklärung — VÖPP
 
 *Stand: Juli 2026*
 
-Voebbar ist ein privates, nicht-kommerzielles Projekt und steht in keiner Verbindung zum
+VÖPP ist ein privates, nicht-kommerzielles Projekt und steht in keiner Verbindung zum
 Verbund der Öffentlichen Bibliotheken Berlins (VÖBB) oder zur ZLB.
 
 ## Kurzfassung
 
-**Voebbar erhebt, speichert und überträgt keinerlei Daten an den Entwickler oder an Dritte.**
+**VÖPP erhebt, speichert und überträgt keinerlei Daten an den Entwickler oder an Dritte.**
 Es gibt keine Analyse-, Tracking- oder Werbe-Komponenten und keine eigenen Server.
 
 ## Welche Daten verarbeitet die App?

@@ -1,4 +1,4 @@
-# App-Store-Vorbereitung — Voebbar
+# App-Store-Vorbereitung — VÖPP
 
 Arbeitsdokument für die Einreichung. Texte können direkt in App Store Connect übernommen werden.
 
@@ -6,8 +6,8 @@ Arbeitsdokument für die Einreichung. Texte können direkt in App Store Connect 
 
 | Feld | Wert |
 |---|---|
-| App-Name | **Voebbar** |
-| Untertitel (Claim) | Bibo Berlin |
+| App-Name | **VÖPP** |
+| Untertitel (Claim) | Die App für den VÖBB |
 | Bundle-ID | `de.ncls.voebbar` |
 | Primäre Kategorie | Dienstprogramme (Utilities) |
 | Sekundäre Kategorie | Bücher (Books) |
@@ -24,7 +24,7 @@ Alle Daten bleiben auf dem Gerät (UserDefaults + Keychain).
 
 ## Beschreibung (Entwurf)
 
-> Voebbar zeigt dir die Ausleihen deiner Berliner Bibliothekskonten (VÖBB) auf einen Blick —
+> VÖPP zeigt dir die Ausleihen deiner Berliner Bibliothekskonten (VÖBB) auf einen Blick —
 > für beliebig viele Bibliotheksausweise.
 >
 > • Alle ausgeliehenen Medien mit Rückgabedatum, sortiert nach Fälligkeit
@@ -39,7 +39,7 @@ Alle Daten bleiben auf dem Gerät (UserDefaults + Keychain).
 > Deine Daten gehören dir: Passwörter liegen ausschließlich im Schlüsselbund deines iPhones,
 > es gibt keine Server, kein Tracking, keine Werbung.
 >
-> Hinweis: Voebbar ist ein privates, inoffizielles Projekt ohne Verbindung zum VÖBB oder zur
+> Hinweis: VÖPP ist ein privates, inoffizielles Projekt ohne Verbindung zum VÖBB oder zur
 > ZLB. Die App greift auf die offizielle Webseite voebb.de zu — ist diese wegen
 > Wartungsarbeiten nicht erreichbar, funktioniert auch die App nicht. Du benötigst einen
 > gültigen Bibliotheksausweis des Verbunds der Öffentlichen Bibliotheken Berlins.
@@ -61,7 +61,7 @@ Passwort:      <hier eintragen>
 
 **Notizen für das Review-Team (Entwurf):**
 
-> Voebbar is an unofficial, private client for the Berlin public library network (VÖBB).
+> VÖPP is an unofficial, private client for the Berlin public library network (VÖBB).
 > It signs in to the official website voebb.de with the user's own library-card credentials
 > and shows current loans, due dates and fees, and can renew loans. All data stays on the
 > device (Keychain/UserDefaults); the app has no backend, no analytics and no ads.
@@ -81,8 +81,8 @@ Gerät aufnehmen (Seitentaste + Lauter). Empfohlene Motive:
 
 ## Checkliste bis zur Einreichung
 
-- [ ] App-Store-Connect: App anlegen (Name „Voebbar", Bundle-ID `de.ncls.voebbar`)
-- [ ] Untertitel „Bibo Berlin" eintragen
+- [ ] App-Store-Connect: App anlegen (Name „VÖPP", Bundle-ID `de.ncls.voebbar`)
+- [ ] Untertitel „Die App für den VÖBB" eintragen
 - [ ] Beschreibung + Keywords aus diesem Dokument übernehmen
 - [ ] Datenschutz-Label „Daten werden nicht erhoben" ausfüllen
 - [ ] Datenschutz-URL + Support-URL eintragen

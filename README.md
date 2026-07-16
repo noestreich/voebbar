@@ -4,23 +4,23 @@ Ausleihen, Fälligkeiten und Gebühren mehrerer Bibliothekskarten des
 **[VÖBB](https://www.voebb.de/)** (Verbund der Öffentlichen Bibliotheken Berlins) – mit
 Verlängerung auf Knopfdruck. Zwei Apps, ein gemeinsamer Kern (`VOEBBKit`):
 
-- **iOS-App „Voebbar"** (SwiftUI, iOS 16+)
+- **iOS-App „VÖPP"** (SwiftUI, iOS 16+)
 - **macOS-Menüleisten-App** (AppKit, Swift Package Manager, macOS 13+)
 
 ## Download
 
-- 📲 **iPhone:** [Voebbar im App Store laden](https://apps.apple.com/de/app/voebbar/id6790911430)
+- 📲 **iPhone:** [VÖPP im App Store laden](https://apps.apple.com/de/app/voebbar/id6790911430)
 - 💻 **Mac:** [VOEBBMenu.dmg aus dem neuesten Release herunterladen](https://github.com/noestreich/voebbar/releases/latest) —
   dort unter „Assets" die Datei `VOEBBMenu-x.x.dmg` anklicken, öffnen und die App in den
   Programme-Ordner ziehen (signiert & notarisiert, kein Gatekeeper-Dialog)
 
 ![VÖBB Bibliothek](assets/bibo-1.jpg)
 
-## iOS-App „Voebbar"
+## iOS-App „VÖPP"
 
-**[➡️ Voebbar im App Store](https://apps.apple.com/de/app/voebbar/id6790911430)**
+**[➡️ VÖPP im App Store](https://apps.apple.com/de/app/voebbar/id6790911430)**
 
-![Voebbar auf dem iPhone](assets/ios-screenshot.png)
+![VÖPP auf dem iPhone](assets/ios-screenshot.png)
 
 **Ausleihen im Blick**
 - Alle Medien gruppiert nach Konto, sortiert nach Fälligkeit — Abschnitte ein-/ausklappbar
