@@ -9,6 +9,7 @@ Verlängerung auf Knopfdruck. Zwei Apps, ein gemeinsamer Kern (`VOEBBKit`):
 
 ## Download
 
+- 🌐 **Webseite:** [voepp.de](https://voepp.de/)
 - 📲 **iPhone:** [VÖPP im App Store laden](https://apps.apple.com/de/app/voebbar/id6790911430)
 - 💻 **Mac:** [VOEBBMenu.dmg aus dem neuesten Release herunterladen](https://github.com/noestreich/voebbar/releases/latest) —
   dort unter „Assets" die Datei `VOEBBMenu-x.x.dmg` anklicken, öffnen und die App in den

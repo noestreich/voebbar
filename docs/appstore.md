@@ -13,6 +13,7 @@ Arbeitsdokument für die Einreichung. Texte können direkt in App Store Connect 
 | Sekundäre Kategorie | Bücher (Books) |
 | Altersfreigabe | 4+ |
 | Preis | Kostenlos |
+| Marketing-URL | https://voepp.de |
 | Support-URL | https://github.com/noestreich/voebbar |
 | Datenschutz-URL | https://github.com/noestreich/voebbar/blob/main/PRIVACY.md |
 | Export Compliance | `ITSAppUsesNonExemptEncryption = NO` (im Info.plist gesetzt — keine Nachfrage beim Upload) |
