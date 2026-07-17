@@ -91,6 +91,8 @@ Reines HTML-Scraping der aDIS-Weboberfläche (`VOEBBService` / `HTMLParser` in `
 kein öffentliches API — gekoppelt an VÖBBs aktuelles Markup. Beide Apps teilen sich Scraper,
 Parser, Models und Konten-Verwaltung; die UI ist jeweils nativ. Siehe `CLAUDE.md` für Details.
 
+Der Quellcode der Landing Page [voepp.de](https://voepp.de/) liegt unter `website/`.
+
 ## Anforderungen
 
 - iOS 16 oder neuer bzw. macOS 13 Ventura oder neuer
