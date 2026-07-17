@@ -7,7 +7,7 @@ Arbeitsdokument für die Einreichung. Texte können direkt in App Store Connect 
 | Feld | Wert |
 |---|---|
 | App-Name | **VÖPP** |
-| Untertitel (Claim) | Die App für den VÖBB |
+| Untertitel (Claim) | Die App für dein VÖBB-Konto |
 | Bundle-ID | `de.ncls.voebbar` |
 | Primäre Kategorie | Dienstprogramme (Utilities) |
 | Sekundäre Kategorie | Bücher (Books) |
@@ -82,7 +82,7 @@ Gerät aufnehmen (Seitentaste + Lauter). Empfohlene Motive:
 ## Checkliste bis zur Einreichung
 
 - [ ] App-Store-Connect: App anlegen (Name „VÖPP", Bundle-ID `de.ncls.voebbar`)
-- [ ] Untertitel „Die App für den VÖBB" eintragen
+- [ ] Untertitel „Die App für dein VÖBB-Konto" eintragen
 - [ ] Beschreibung + Keywords aus diesem Dokument übernehmen
 - [ ] Datenschutz-Label „Daten werden nicht erhoben" ausfüllen
 - [ ] Datenschutz-URL + Support-URL eintragen
