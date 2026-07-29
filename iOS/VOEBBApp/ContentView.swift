@@ -1,10 +1,18 @@
 import SwiftUI
 import VOEBBKit
 
+/// Auswahl für das Medien-Detail-Sheet (Medium + zugehöriges Konto).
+struct SelectedLoan: Identifiable {
+    let loan: Loan
+    let account: LibraryAccount
+    var id: String { account.cardNumber + loan.checkboxValue }
+}
+
 struct ContentView: View {
     @EnvironmentObject private var model: AppModel
     @State private var showAccounts = false
     @State private var collapsedAccounts: Set<String> = []
+    @State private var selectedLoan: SelectedLoan?
 
     var body: some View {
         NavigationStack {
@@ -28,6 +36,10 @@ struct ContentView: View {
             }
             .sheet(isPresented: $showAccounts) {
                 AccountsView()
+            }
+            .sheet(item: $selectedLoan) { selection in
+                LoanDetailView(loan: selection.loan, account: selection.account)
+                    .presentationDetents([.medium])
             }
             .alert(item: $model.alert) { alert in
                 Alert(
@@ -126,7 +138,20 @@ struct ContentView: View {
                         .foregroundStyle(.secondary)
                 } else {
                     ForEach(data.loans.sorted(by: { $0.dueDate < $1.dueDate }), id: \.checkboxValue) { loan in
-                        LoanRow(loan: loan)
+                        Button {
+                            selectedLoan = SelectedLoan(loan: loan, account: data.account)
+                        } label: {
+                            LoanRow(loan: loan, isRenewing: model.renewingLoan == loan.checkboxValue)
+                        }
+                        .buttonStyle(.plain)
+                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                            Button {
+                                Task { await model.renew(loan: loan, for: data.account) }
+                            } label: {
+                                Label("Verlängern", systemImage: "arrow.clockwise")
+                            }
+                            .tint(.green)
+                        }
                     }
                     Button {
                         Task { await model.renewAll(for: data.account) }
@@ -193,6 +218,7 @@ struct ContentView: View {
 
 struct LoanRow: View {
     let loan: Loan
+    var isRenewing: Bool = false
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
@@ -217,6 +243,14 @@ struct LoanRow: View {
                     .font(.caption)
                     .foregroundStyle(dueColor)
             }
+            if isRenewing {
+                ProgressView()
+            } else {
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+                    .padding(.top, 4)
+            }
         }
         .padding(.vertical, 2)
     }
@@ -233,5 +267,79 @@ struct LoanRow: View {
         if loan.isOverdue || loan.daysUntilDue < 7 { return .red }
         if loan.daysUntilDue <= 14 { return .orange }
         return .secondary
+    }
+}
+
+/// Detail-Sheet für ein einzelnes Medium: voller Titel, Metadaten und
+/// die Einzelverlängerung als gut sichtbarer Button.
+struct LoanDetailView: View {
+    @EnvironmentObject private var model: AppModel
+    @Environment(\.dismiss) private var dismiss
+
+    let loan: Loan
+    let account: LibraryAccount
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 24) {
+            HStack(alignment: .top, spacing: 12) {
+                Text(loan.bookEmoji)
+                    .font(.largeTitle)
+                Text(loan.title)
+                    .font(.title3.weight(.semibold))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            VStack(alignment: .leading, spacing: 12) {
+                detailRow(icon: "building.columns", text: loan.library)
+                detailRow(icon: "calendar", text: dueText)
+                detailRow(icon: "person", text: account.name)
+                if !statusText.isEmpty {
+                    detailRow(icon: "exclamationmark.circle", text: statusText)
+                        .foregroundStyle(.orange)
+                }
+            }
+            .font(.subheadline)
+
+            Spacer()
+
+            Button {
+                dismiss()
+                Task { await model.renew(loan: loan, for: account) }
+            } label: {
+                Label("Dieses Medium verlängern", systemImage: "arrow.clockwise")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .disabled(model.renewingLoan != nil || model.renewingCard != nil || model.isLoading)
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+
+    private var dueText: String {
+        if loan.isOverdue {
+            return "Fällig am \(loan.dueDateString) — überfällig"
+        }
+        let days = loan.daysUntilDue
+        return "Fällig am \(loan.dueDateString) (in \(days) Tag\(days == 1 ? "" : "en"))"
+    }
+
+    /// Bekannter Verlängerungsstatus: Grund aus der Probe, sonst der Status-Text der Liste.
+    private var statusText: String {
+        if loan.isRenewable == false, !loan.renewalReason.isEmpty {
+            return RenewabilityRow.shorten(loan.renewalReason)
+        }
+        return loan.renewalStatus.trimmingCharacters(in: .whitespaces)
+    }
+
+    private func detailRow(icon: String, text: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Image(systemName: icon)
+                .frame(width: 20)
+                .foregroundStyle(.secondary)
+            Text(text)
+                .fixedSize(horizontal: false, vertical: true)
+        }
     }
 }

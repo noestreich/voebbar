@@ -10,6 +10,8 @@ final class AppModel: ObservableObject {
     @Published private(set) var refreshProgress: Double?
     /// Ausweisnummer des Kontos, für das gerade eine Verlängerung läuft, sonst nil.
     @Published private(set) var renewingCard: String?
+    /// checkboxValue des Mediums, für das gerade eine Einzelverlängerung läuft, sonst nil.
+    @Published private(set) var renewingLoan: String?
     @Published private(set) var lastRefreshed: Date?
     @Published var alert: AlertMessage?
 
@@ -88,8 +90,25 @@ final class AppModel: ObservableObject {
 
     // MARK: - Verlängern
 
+    /// Verlängert ein einzelnes Medium (Match über Titel + Datum + Bibliothek).
+    func renew(loan: Loan, for account: LibraryAccount) async {
+        guard renewingCard == nil, renewingLoan == nil,
+              let password = AccountStorage.shared.password(for: account) else { return }
+        renewingLoan = loan.checkboxValue
+        do {
+            let session = VOEBBSession(account: account)
+            let outcome = try await session.renewLoan(password: password, matching: loan)
+            renewingLoan = nil
+            alert = AlertMessage(title: loan.title, message: outcome.userMessage)
+            await refresh()
+        } catch {
+            renewingLoan = nil
+            alert = AlertMessage(title: "Fehler beim Verlängern", message: error.localizedDescription)
+        }
+    }
+
     func renewAll(for account: LibraryAccount) async {
-        guard renewingCard == nil,
+        guard renewingCard == nil, renewingLoan == nil,
               let password = AccountStorage.shared.password(for: account) else { return }
         renewingCard = account.cardNumber
         do {

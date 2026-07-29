@@ -105,6 +105,17 @@ public final class VOEBBSession {
         try await renewLoans(password: password) { $0.daysUntilDue <= days }
     }
 
+    /// Renews a single loan. Matched by title + due date + library within the freshly
+    /// fetched loans list — checkbox values are session-specific and must not be reused
+    /// across logins.
+    public func renewLoan(password: String, matching loan: Loan) async throws -> RenewalOutcome {
+        try await renewLoans(password: password) {
+            $0.title == loan.title &&
+            $0.dueDateString == loan.dueDateString &&
+            $0.library == loan.library
+        }
+    }
+
     /// Renewal is a two-step flow because BOTH "Alle verlängern" and "Markierte Medien
     /// verlängern" abort the entire batch if a single selected item is blocked (e.g. by a
     /// Vormerkung). So we first probe renewability ("Markierte Medien verlängerbar?",

@@ -32,6 +32,8 @@ Verlängerung auf Knopfdruck. Zwei Apps, ein gemeinsamer Kern (`VOEBBKit`):
   mit Fortschrittsleiste und dauerhaft sichtbarem „Zuletzt aktualisiert"-Hinweis
 
 **Verlängern**
+- Einzelne Medien verlängern: Tipp auf ein Medium öffnet die Detailansicht mit
+  Verlängern-Button (alternativ per Wisch-Geste nach links)
 - „Alle verlängern" pro Konto mit Live-Feedback während des Vorgangs
 - Zwei-Schritt-Verlängerung: erst Verlängerbarkeit prüfen, dann nur die verlängerbaren
   Medien einreichen — verhindert, dass VÖBB die ganze Aktion abbricht, sobald ein Titel
