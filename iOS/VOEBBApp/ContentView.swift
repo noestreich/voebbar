@@ -52,6 +52,18 @@ struct ContentView: View {
             .navigationTitle("VÖPP")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button {
+                        Task { await model.refresh() }
+                    } label: {
+                        if model.isLoading {
+                            ProgressView()
+                        } else {
+                            Image(systemName: "arrow.clockwise")
+                        }
+                    }
+                    .disabled(model.isLoading)
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button {
                         showAccounts = true

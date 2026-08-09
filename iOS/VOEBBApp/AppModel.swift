@@ -88,6 +88,15 @@ final class AppModel: ObservableObject {
         await NotificationScheduler.reschedule(accountData: accountData, leadDays: NotificationScheduler.leadDays)
     }
 
+    /// Aktualisiert nur, wenn der letzte Stand älter als `minutes` Minuten ist —
+    /// für das Zurückkehren aus dem Hintergrund.
+    func refreshIfStale(minutes: Double = 15) async {
+        if let lastRefreshed, Date().timeIntervalSince(lastRefreshed) < minutes * 60 {
+            return
+        }
+        await refresh()
+    }
+
     // MARK: - Verlängern
 
     /// Verlängert ein einzelnes Medium (Match über Titel + Datum + Bibliothek).
