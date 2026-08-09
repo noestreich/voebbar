@@ -190,7 +190,7 @@ struct ContentView: View {
                                     .foregroundStyle(.secondary)
                             }
                         } else {
-                            Label("Alle verlängern", systemImage: "arrow.clockwise")
+                            Label("Verlängerbare verlängern", systemImage: "arrow.clockwise")
                         }
                     }
                     .disabled(model.isLoading || model.renewingCard != nil)
@@ -212,6 +212,8 @@ struct ContentView: View {
                         .rotationEffect(.degrees(isCollapsed ? 0 : 90))
                         .foregroundStyle(.secondary)
                     Text(data.account.name)
+                        .font(.headline)
+                        .foregroundStyle(.primary)
                     Spacer()
                     Text(String(format: "%.2f €", locale: Locale(identifier: "de_DE"), data.fees))
                         .foregroundStyle(data.fees > 0 ? .red : .secondary)
@@ -220,6 +222,7 @@ struct ContentView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .textCase(nil)
         }
     }
 
@@ -355,12 +358,15 @@ struct LoanDetailView: View {
                 dismiss()
                 Task { await model.renew(loan: loan, for: account) }
             } label: {
-                Label("Dieses Medium verlängern", systemImage: "arrow.clockwise")
-                    .frame(maxWidth: .infinity)
+                Label(
+                    loan.isBlocked ? "Verlängerung derzeit nicht möglich" : "Dieses Medium verlängern",
+                    systemImage: loan.isBlocked ? "lock" : "arrow.clockwise"
+                )
+                .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
-            .disabled(model.renewingLoan != nil || model.renewingCard != nil || model.isLoading)
+            .disabled(loan.isBlocked || model.renewingLoan != nil || model.renewingCard != nil || model.isLoading)
             .padding(24)
         }
     }
@@ -373,12 +379,14 @@ struct LoanDetailView: View {
         return "Fällig am \(loan.dueDateString) (in \(days) Tag\(days == 1 ? "" : "en"))"
     }
 
-    /// Bekannter Verlängerungsstatus: Grund aus der Probe, sonst der Status-Text der Liste.
+    /// Bekannter Verlängerungsstatus, immer ausgeschrieben: Die Statusspalte der
+    /// Ausleihliste enthält den vollständigen Text und hat Vorrang — der Grund aus
+    /// der Verlängerbarkeits-Probe ist teils von VÖBB selbst mit "…" gekürzt.
     private var statusText: String {
-        if loan.isRenewable == false, !loan.renewalReason.isEmpty {
-            return RenewabilityRow.shorten(loan.renewalReason)
-        }
-        return loan.renewalStatus.trimmingCharacters(in: .whitespaces)
+        let status = loan.renewalStatus.trimmingCharacters(in: .whitespaces)
+        let text = status.isEmpty ? RenewabilityRow.shorten(loan.renewalReason) : status
+        // VÖBB klebt Sätze teils ohne Leerzeichen zusammen ("erreicht.Verlängerung")
+        return text.replacingOccurrences(of: #"\.([A-ZÄÖÜ])"#, with: ". $1", options: .regularExpression)
     }
 
     private func detailRow(icon: String, text: String) -> some View {

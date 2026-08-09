@@ -55,6 +55,15 @@ struct AccountsView: View {
                 }
 
                 Section {
+                } header: {
+                    Text("Verlängerung")
+                } footer: {
+                    Text("VÖPP prüft vor jeder Verlängerung, welche Medien der VÖBB gerade verlängern lässt, und reicht nur diese ein. Medien mit einem \(Image(systemName: "lock.fill"))-Symbol sind derzeit nicht verlängerbar — etwa wegen Vormerkungen oder weil die maximale Anzahl an Verlängerungen erreicht ist. Der genaue Grund steht in der Detailansicht des Mediums.")
+                }
+
+                Section {
+                } header: {
+                    Text("Über VÖPP")
                 } footer: {
                     Text("Diese App ist ein privates Projekt ohne Verbindung zum VÖBB. Sie greift auf die offizielle Webseite des Verbunds der Öffentlichen Bibliotheken Berlins (voebb.de) zu — ist diese z.B. wegen Wartungsarbeiten nicht erreichbar, funktioniert auch die App nicht. Alle Daten (Konten, Passwörter, Ausleihen) verbleiben ausschließlich auf deinem iPhone.")
                 }
