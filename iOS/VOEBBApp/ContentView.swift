@@ -193,7 +193,7 @@ struct ContentView: View {
                             Label("Verlängerbare verlängern", systemImage: "arrow.clockwise")
                         }
                     }
-                    .disabled(model.isLoading || model.renewingCard != nil)
+                    .disabled(model.renewingCard != nil || model.renewingLoan != nil)
                 }
             }
         } header: {
@@ -213,10 +213,10 @@ struct ContentView: View {
                         .foregroundStyle(.secondary)
                     Text(data.account.name)
                         .font(.headline)
-                        .foregroundStyle(.primary)
+                        .foregroundStyle(Color.primary)
                     Spacer()
                     Text(String(format: "%.2f €", locale: Locale(identifier: "de_DE"), data.fees))
-                        .foregroundStyle(data.fees > 0 ? .red : .secondary)
+                        .foregroundStyle(data.fees > 0 ? Color.red : Color.secondary)
                     loanCountBadge(data)
                 }
                 .contentShape(Rectangle())
@@ -366,7 +366,7 @@ struct LoanDetailView: View {
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
-            .disabled(loan.isBlocked || model.renewingLoan != nil || model.renewingCard != nil || model.isLoading)
+            .disabled(loan.isBlocked || model.renewingLoan != nil || model.renewingCard != nil)
             .padding(24)
         }
     }
