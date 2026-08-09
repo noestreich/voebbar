@@ -354,20 +354,29 @@ struct LoanDetailView: View {
                 .frame(maxWidth: .infinity, alignment: .topLeading)
             }
 
-            Button {
-                dismiss()
-                Task { await model.renew(loan: loan, for: account) }
-            } label: {
-                Label(
-                    loan.isBlocked ? "Verlängerung derzeit nicht möglich" : "Dieses Medium verlängern",
-                    systemImage: loan.isBlocked ? "lock" : "arrow.clockwise"
-                )
-                .frame(maxWidth: .infinity)
+            if loan.isBlocked {
+                // Eigene Optik statt Apples blassem Disabled-Stil, der auf dem
+                // weißen Sheet praktisch unsichtbar ist.
+                Label("Verlängerung derzeit nicht möglich", systemImage: "lock")
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 15)
+                    .background(Color(.secondarySystemFill), in: RoundedRectangle(cornerRadius: 14))
+                    .padding(24)
+            } else {
+                Button {
+                    dismiss()
+                    Task { await model.renew(loan: loan, for: account) }
+                } label: {
+                    Label("Dieses Medium verlängern", systemImage: "arrow.clockwise")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .disabled(model.renewingLoan != nil || model.renewingCard != nil)
+                .padding(24)
             }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .disabled(loan.isBlocked || model.renewingLoan != nil || model.renewingCard != nil)
-            .padding(24)
         }
     }
 
