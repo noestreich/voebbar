@@ -1,6 +1,32 @@
 import SwiftUI
 import VOEBBKit
 
+/// Anzeige-Helfer für Loans (reine Präsentation — Parser und Kit bleiben unberührt).
+private extension Loan {
+    /// "Titel : Untertitel / Autor" → nur der Titel-Teil vor dem ersten " / ".
+    var displayTitle: String {
+        guard let r = title.range(of: " / ") else { return title }
+        return String(title[..<r.lowerBound]).trimmingCharacters(in: .whitespaces)
+    }
+
+    /// Autor-/Verantwortlichkeits-Teil hinter " / ", falls vorhanden.
+    var displayAuthor: String? {
+        guard let r = title.range(of: " / ") else { return nil }
+        let author = String(title[r.upperBound...]).trimmingCharacters(in: .whitespaces)
+        return author.isEmpty ? nil : author
+    }
+
+    /// Ampelfarbe des Mediums (gleiche Schwellen wie bookEmoji).
+    var urgencyColor: Color {
+        if isOverdue || daysUntilDue < 7 { return .red }
+        if daysUntilDue <= 14 { return .orange }
+        return .green
+    }
+
+    /// Von der Verlängerbarkeits-Probe als gesperrt gemeldet.
+    var isBlocked: Bool { isRenewable == false }
+}
+
 /// Auswahl für das Medien-Detail-Sheet (Medium + zugehöriges Konto).
 struct SelectedLoan: Identifiable {
     let loan: Loan
@@ -39,7 +65,8 @@ struct ContentView: View {
             }
             .sheet(item: $selectedLoan) { selection in
                 LoanDetailView(loan: selection.loan, account: selection.account)
-                    .presentationDetents([.medium])
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
             }
             .alert(item: $model.alert) { alert in
                 Alert(
@@ -221,27 +248,34 @@ struct LoanRow: View {
     var isRenewing: Bool = false
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Text(loan.bookEmoji)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(loan.title)
-                    .lineLimit(2)
-                Text(shortLibrary)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                if loan.isRenewable == false, !loan.renewalReason.isEmpty {
-                    Text(RenewabilityRow.shorten(loan.renewalReason))
-                        .font(.caption2)
-                        .foregroundStyle(.orange)
+        HStack(alignment: .center, spacing: 12) {
+            VStack(spacing: 4) {
+                Circle()
+                    .fill(loan.urgencyColor)
+                    .frame(width: 10, height: 10)
+                if loan.isBlocked {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 8))
+                        .foregroundStyle(.secondary)
                 }
             }
-            Spacer()
-            VStack(alignment: .trailing, spacing: 2) {
-                Text(loan.dueDateString)
-                    .font(.callout.monospacedDigit())
-                Text(loan.isOverdue ? "überfällig" : "\(loan.daysUntilDue) Tage")
+            VStack(alignment: .leading, spacing: 3) {
+                Text(loan.displayTitle)
+                    .font(.subheadline.weight(.medium))
+                    .lineLimit(2)
+                Text(subtitle)
                     .font(.caption)
-                    .foregroundStyle(dueColor)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 12)
+            VStack(alignment: .trailing, spacing: 3) {
+                Text(loan.isOverdue ? "überfällig" : "\(loan.daysUntilDue) Tage")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(loan.urgencyColor)
+                Text(loan.dueDateString)
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
             }
             if isRenewing {
                 ProgressView()
@@ -249,10 +283,16 @@ struct LoanRow: View {
                 Image(systemName: "chevron.right")
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.tertiary)
-                    .padding(.top, 4)
             }
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 4)
+    }
+
+    private var subtitle: String {
+        if let author = loan.displayAuthor {
+            return "\(author) · \(shortLibrary)"
+        }
+        return shortLibrary
     }
 
     private var shortLibrary: String {
@@ -261,12 +301,6 @@ struct LoanRow: View {
                 .trimmingCharacters(in: .whitespaces)
         }
         return loan.library
-    }
-
-    private var dueColor: Color {
-        if loan.isOverdue || loan.daysUntilDue < 7 { return .red }
-        if loan.daysUntilDue <= 14 { return .orange }
-        return .secondary
     }
 }
 
@@ -280,27 +314,42 @@ struct LoanDetailView: View {
     let account: LibraryAccount
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            HStack(alignment: .top, spacing: 12) {
-                Text(loan.bookEmoji)
-                    .font(.largeTitle)
-                Text(loan.title)
-                    .font(.title3.weight(.semibold))
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    HStack(alignment: .top, spacing: 12) {
+                        Circle()
+                            .fill(loan.urgencyColor)
+                            .frame(width: 12, height: 12)
+                            .padding(.top, 6)
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(loan.displayTitle)
+                                .font(.title3.weight(.semibold))
+                                .fixedSize(horizontal: false, vertical: true)
+                            if let author = loan.displayAuthor {
+                                Text(author)
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                    .fixedSize(horizontal: false, vertical: true)
+                            }
+                        }
+                    }
 
-            VStack(alignment: .leading, spacing: 12) {
-                detailRow(icon: "building.columns", text: loan.library)
-                detailRow(icon: "calendar", text: dueText)
-                detailRow(icon: "person", text: account.name)
-                if !statusText.isEmpty {
-                    detailRow(icon: "exclamationmark.circle", text: statusText)
-                        .foregroundStyle(.orange)
+                    VStack(alignment: .leading, spacing: 12) {
+                        detailRow(icon: "building.columns", text: loan.library)
+                        detailRow(icon: "calendar", text: dueText)
+                        detailRow(icon: "person", text: account.name)
+                        if !statusText.isEmpty {
+                            detailRow(icon: loan.isBlocked ? "lock" : "info.circle", text: statusText)
+                                .foregroundStyle(loan.isBlocked ? Color.orange : Color.secondary)
+                        }
+                    }
+                    .font(.subheadline)
                 }
+                .padding(.horizontal, 24)
+                .padding(.top, 32)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
             }
-            .font(.subheadline)
-
-            Spacer()
 
             Button {
                 dismiss()
@@ -312,9 +361,8 @@ struct LoanDetailView: View {
             .buttonStyle(.borderedProminent)
             .controlSize(.large)
             .disabled(model.renewingLoan != nil || model.renewingCard != nil || model.isLoading)
+            .padding(24)
         }
-        .padding(24)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
     private var dueText: String {
