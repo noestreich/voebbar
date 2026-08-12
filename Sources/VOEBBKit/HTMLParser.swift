@@ -100,43 +100,12 @@ enum HTMLParser {
         )
     }
 
-    // MARK: - Fees Page
+    // MARK: - Amounts
 
-    static func parseFees(_ html: String) -> (fees: Double, cardValid: String) {
-        var fees = 0.0
-        var cardValid = ""
-
-        // Pattern: Fällige Gebühren 1.00
-        // Also: 1.00 EUR at the end
-        let feePatterns = [
-            #"Fällige Gebühren\s+([\d,\.]+)"#,
-            #"([\d]+[,\.][\d]+)\s*EUR"#,
-        ]
-        for pattern in feePatterns {
-            if let m = html.range(of: pattern, options: .regularExpression) {
-                let matchStr = String(html[m])
-                // Extract number
-                let numPattern = try! NSRegularExpression(pattern: #"([\d]+[,\.][\d]+)"#)
-                let matchRange = NSRange(matchStr.startIndex..., in: matchStr)
-                if let numMatch = numPattern.firstMatch(in: matchStr, range: matchRange),
-                   let numRange = Range(numMatch.range(at: 1), in: matchStr) {
-                    let numStr = String(matchStr[numRange])
-                        .replacingOccurrences(of: ",", with: ".")
-                    fees = Double(numStr) ?? 0
-                    break
-                }
-            }
-        }
-
-        // Card validity: "Ausweis gültig bis 5.7.2026"
-        if let m = html.range(of: #"Ausweis gültig bis\s+([^\s<]+)"#, options: .regularExpression) {
-            let matchStr = String(html[m])
-            cardValid = matchStr
-                .replacingOccurrences(of: "Ausweis gültig bis", with: "")
-                .trimmingCharacters(in: .whitespaces)
-        }
-
-        return (fees, cardValid)
+    /// "0.40 EUR" / "1,50" → 0.40 / 1.5 — erster Zahlwert im Text.
+    static func parseAmount(_ text: String) -> Double? {
+        guard let m = text.range(of: #"\d+(?:[.,]\d+)?"#, options: .regularExpression) else { return nil }
+        return Double(text[m].replacingOccurrences(of: ",", with: "."))
     }
 
     // MARK: - Renewability Probe ("Markierte Medien verlängerbar?")

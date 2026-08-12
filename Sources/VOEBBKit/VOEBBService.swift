@@ -35,7 +35,10 @@ public final class VOEBBSession {
         let (appURL, overviewHTML) = try await login(password: password)
         var data = AccountData(account: account)
 
-        // Extras direkt von der Übersichtsseite — keine zusätzliche Navigation nötig.
+        // Alles Kontodaten-artige steht direkt auf der Übersichtsseite
+        // (<dt>/<dd>-Liste): Gebühren, Abholcode, Ausweisgültigkeit —
+        // keine *SGG-Navigation mehr nötig.
+        applyFees(fromOverview: overviewHTML, to: &data)
         data.pickupCode = HTMLParser.parseAccountInfo(overviewHTML, term: "Abholcode")
         if let cardValid = HTMLParser.parseAccountInfo(overviewHTML, term: "Ausweis gültig bis") {
             data.cardValidUntil = cardValid
@@ -43,21 +46,15 @@ public final class VOEBBSession {
 
         let loanCount = HTMLParser.parseLoanCount(overviewHTML)
 
-        // loanCount == 0  → definitiv keine Ausleihen, direkt zu Gebühren
+        // loanCount == 0  → definitiv keine Ausleihen, fertig
         // loanCount > 0   → Ausleihen vorhanden, Seite abrufen
         // loanCount == nil → Erkennung unsicher, Ausleihen trotzdem probieren
         if loanCount != 0 {
             let (loansHTML, _) = try await navigate(appURL: appURL, fromHTML: overviewHTML, navCode: "*SZA", rc: 3)
             var parsed = HTMLParser.parseLoans(loansHTML)
+            await logout(appURL: appURL, fromHTML: loansHTML, rc: 4)
 
             if !parsed.isEmpty {
-                // Gebühren DIREKT von der Ausleihseite (rc=4): aDIS-Identitäten sind
-                // Einweg-Token und die Probe-Ergebnisseite akzeptiert keine *SGG-Navigation
-                // (sie liefert stumm wieder die Ausleihseite → Gebühren wären immer 0).
-                let (feesHTML, _) = try await navigate(appURL: appURL, fromHTML: loansHTML, navCode: "*SGG", rc: 4)
-                applyFees(from: feesHTML, to: &data)
-                await logout(appURL: appURL, fromHTML: feesHTML, rc: 5)
-
                 // Verlängerbarkeit in einer EIGENEN Session proben (frische Cookies,
                 // kein Einfluss auf diese Session). Fehlertolerant: ohne Probe bleiben
                 // die Felder einfach nil. Checkbox-Werte sind positionsbasiert und
@@ -79,16 +76,9 @@ public final class VOEBBSession {
                     // Probe fehlgeschlagen → Ausleihen ohne Verlängerbarkeits-Info anzeigen
                 }
                 data.loans = parsed
-            } else {
-                let (feesHTML, _) = try await navigate(appURL: appURL, fromHTML: overviewHTML, navCode: "*SGG", rc: 3)
-                applyFees(from: feesHTML, to: &data)
-                await logout(appURL: appURL, fromHTML: feesHTML, rc: 4)
             }
         } else {
-            // Keine Ausleihen laut Übersicht → direkt Gebühren
-            let (feesHTML, _) = try await navigate(appURL: appURL, fromHTML: overviewHTML, navCode: "*SGG", rc: 3)
-            applyFees(from: feesHTML, to: &data)
-            await logout(appURL: appURL, fromHTML: feesHTML, rc: 4)
+            await logout(appURL: appURL, fromHTML: overviewHTML, rc: 3)
         }
 
         data.lastUpdated = Date()
@@ -113,19 +103,19 @@ public final class VOEBBSession {
         return probe.rows
     }
 
-    /// Übernimmt Gebühren + Ausweisgültigkeit — aber nur, wenn die Antwort erkennbar
-    /// das Gebührenkonto ist. Sonst wird `feesUnknown` gesetzt, statt still 0 zu melden.
-    private func applyFees(from html: String, to data: inout AccountData) {
-        guard html.contains("Gebührenkonto") else {
+    /// Liest die fälligen Gebühren aus der <dl>-Liste der Kontoübersicht.
+    /// Fehlt die Gebühren-Zeile, die Übersicht ist aber als solche erkennbar
+    /// (andere <dt>-Begriffe vorhanden), gilt das als 0 € — ist die Seite gar nicht
+    /// als Übersicht erkennbar, wird `feesUnknown` gesetzt, statt still 0 zu melden.
+    private func applyFees(fromOverview html: String, to data: inout AccountData) {
+        if let raw = HTMLParser.parseAccountInfo(html, term: "Fällige Gebühren"),
+           let amount = HTMLParser.parseAmount(raw) {
+            data.fees = amount
+        } else if HTMLParser.parseAccountInfo(html, term: "Kontostand vom:") != nil
+                    || HTMLParser.parseAccountInfo(html, term: "Abholcode") != nil {
+            data.fees = 0
+        } else {
             data.feesUnknown = true
-            return
-        }
-        let (fees, cardValid) = HTMLParser.parseFees(html)
-        data.fees = fees
-        // Nur überschreiben, wenn die Gebührenseite den Wert liefert — sonst bleibt
-        // der bereits von der Übersichtsseite geparste Wert erhalten.
-        if !cardValid.isEmpty {
-            data.cardValidUntil = cardValid
         }
     }
 
