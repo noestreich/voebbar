@@ -35,6 +35,12 @@ public final class VOEBBSession {
         let (appURL, overviewHTML) = try await login(password: password)
         var data = AccountData(account: account)
 
+        // Extras direkt von der Übersichtsseite — keine zusätzliche Navigation nötig.
+        data.pickupCode = HTMLParser.parseAccountInfo(overviewHTML, term: "Abholcode")
+        if let cardValid = HTMLParser.parseAccountInfo(overviewHTML, term: "Ausweis gültig bis") {
+            data.cardValidUntil = cardValid
+        }
+
         let loanCount = HTMLParser.parseLoanCount(overviewHTML)
 
         // loanCount == 0  → definitiv keine Ausleihen, direkt zu Gebühren
@@ -116,7 +122,11 @@ public final class VOEBBSession {
         }
         let (fees, cardValid) = HTMLParser.parseFees(html)
         data.fees = fees
-        data.cardValidUntil = cardValid
+        // Nur überschreiben, wenn die Gebührenseite den Wert liefert — sonst bleibt
+        // der bereits von der Übersichtsseite geparste Wert erhalten.
+        if !cardValid.isEmpty {
+            data.cardValidUntil = cardValid
+        }
     }
 
     /// Meldet die aDIS-Session serverseitig ab (Nav-Code *SE) — Fire-and-forget,

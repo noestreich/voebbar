@@ -22,6 +22,11 @@ struct AccountsView: View {
                                 Text(account.cardNumber)
                                     .font(.caption.monospaced())
                                     .foregroundStyle(.secondary)
+                                if let details = accountDetails(for: account) {
+                                    Text(details)
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
                             }
                             Spacer()
                             Image(systemName: "chevron.right")
@@ -89,6 +94,21 @@ struct AccountsView: View {
                 AccountFormView(account: account)
             }
         }
+    }
+
+    /// "Abholcode 35 Da · Ausweis gültig bis 12.08.2027" — soweit bekannt.
+    private func accountDetails(for account: LibraryAccount) -> String? {
+        guard let data = model.accountData.first(where: { $0.account.cardNumber == account.cardNumber }) else {
+            return nil
+        }
+        var parts: [String] = []
+        if let code = data.pickupCode {
+            parts.append("Abholcode \(code)")
+        }
+        if !data.cardValidUntil.isEmpty {
+            parts.append("Ausweis gültig bis \(data.cardValidUntil)")
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 }
 

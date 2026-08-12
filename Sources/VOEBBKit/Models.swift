@@ -116,6 +116,8 @@ public struct AccountData: Codable {
     /// nicht aussagekräftig und sollte nicht als "0" angezeigt werden.
     /// (Optional, damit gecachte Daten älterer App-Versionen dekodierbar bleiben.)
     public var feesUnknown: Bool? = nil
+    /// Abholcode für bereitgestellte Medien (z.B. "35 Da"), von der Kontoübersicht.
+    public var pickupCode: String? = nil
 
     public init(account: LibraryAccount) {
         self.account = account

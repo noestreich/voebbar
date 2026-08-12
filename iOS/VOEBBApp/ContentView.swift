@@ -226,6 +226,11 @@ struct ContentView: View {
                     Text(data.account.name)
                         .font(.headline)
                         .foregroundStyle(Color.primary)
+                    if let code = data.pickupCode {
+                        Text("(\(code))")
+                            .font(.subheadline)
+                            .foregroundStyle(Color.secondary)
+                    }
                     Spacer()
                     Text(String(format: "%.2f €", locale: Locale(identifier: "de_DE"), data.fees))
                         .foregroundStyle(data.fees > 0 ? Color.red : Color.secondary)

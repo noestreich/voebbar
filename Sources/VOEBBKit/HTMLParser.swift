@@ -27,6 +27,18 @@ enum HTMLParser {
         return String(tail.prefix(2000))
     }
 
+    /// Liest einen Wert aus der <dl>-Liste der Kontoübersicht
+    /// (`<dt>Begriff</dt><dd>Wert</dd>`), z.B. "Abholcode" → "35 Da".
+    static func parseAccountInfo(_ html: String, term: String) -> String? {
+        let pattern = "<dt[^>]*>\\s*" + NSRegularExpression.escapedPattern(for: term) + "\\s*</dt>\\s*<dd[^>]*>(.*?)</dd>"
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: [.dotMatchesLineSeparators, .caseInsensitive]),
+              let match = regex.firstMatch(in: html, range: NSRange(html.startIndex..., in: html)),
+              let range = Range(match.range(at: 1), in: html)
+        else { return nil }
+        let value = stripHTML(String(html[range]))
+        return value.isEmpty ? nil : value
+    }
+
     // MARK: - Loans Page
 
     static func parseLoans(_ html: String) -> [Loan] {
