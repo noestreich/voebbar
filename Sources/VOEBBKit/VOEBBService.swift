@@ -41,23 +41,26 @@ public final class VOEBBSession {
         // loanCount > 0   → Ausleihen vorhanden, Seite abrufen
         // loanCount == nil → Erkennung unsicher, Ausleihen trotzdem probieren
         if loanCount != 0 {
-            let (loansHTML, loansURL) = try await navigate(appURL: appURL, fromHTML: overviewHTML, navCode: "*SZA", rc: 3)
+            let (loansHTML, _) = try await navigate(appURL: appURL, fromHTML: overviewHTML, navCode: "*SZA", rc: 3)
             var parsed = HTMLParser.parseLoans(loansHTML)
 
-            // Gebühren: von der Ausleihseite aus (rc=4) falls Bücher gefunden,
-            // sonst von der Übersicht (rc=3) – Fallback falls *SZA kein loans-HTML lieferte
             if !parsed.isEmpty {
-                // Verlängerbarkeit proben ("Markierte Medien verlängerbar?", lesend) und
-                // pro Buch mergen. Fehlertolerant: ohne Probe bleiben die Felder einfach nil.
-                var feesSourceHTML = loansHTML
-                var feesRC = 4
+                // Gebühren DIREKT von der Ausleihseite (rc=4): aDIS-Identitäten sind
+                // Einweg-Token und die Probe-Ergebnisseite akzeptiert keine *SGG-Navigation
+                // (sie liefert stumm wieder die Ausleihseite → Gebühren wären immer 0).
+                let (feesHTML, _) = try await navigate(appURL: appURL, fromHTML: loansHTML, navCode: "*SGG", rc: 4)
+                applyFees(from: feesHTML, to: &data)
+                await logout(appURL: appURL, fromHTML: feesHTML, rc: 5)
+
+                // Verlängerbarkeit in einer EIGENEN Session proben (frische Cookies,
+                // kein Einfluss auf diese Session). Fehlertolerant: ohne Probe bleiben
+                // die Felder einfach nil. Checkbox-Werte sind positionsbasiert und
+                // damit zwischen den Sekunden auseinanderliegenden Sessions stabil.
                 do {
-                    let probe = try await probeRenewability(
-                        appURL: appURL, fromHTML: loansHTML, referer: loansURL, requestCount: 4,
-                        checkboxValues: parsed.map(\.checkboxValue).filter { !$0.isEmpty }
-                    )
-                    if !probe.rows.isEmpty {
-                        let byCheckbox = Dictionary(probe.rows.map { ($0.checkboxValue, $0) },
+                    let probeSession = VOEBBSession(account: account)
+                    let rows = try await probeSession.fetchRenewabilityRows(password: password)
+                    if !rows.isEmpty {
+                        let byCheckbox = Dictionary(rows.map { ($0.checkboxValue, $0) },
                                                     uniquingKeysWith: { first, _ in first })
                         for i in parsed.indices {
                             if let s = byCheckbox[parsed[i].checkboxValue] {
@@ -65,34 +68,61 @@ public final class VOEBBSession {
                                 parsed[i].renewalReason = s.reason
                             }
                         }
-                        feesSourceHTML = probe.html
-                        feesRC = 5
                     }
                 } catch {
                     // Probe fehlgeschlagen → Ausleihen ohne Verlängerbarkeits-Info anzeigen
                 }
                 data.loans = parsed
-
-                let (feesHTML, _) = try await navigate(appURL: appURL, fromHTML: feesSourceHTML, navCode: "*SGG", rc: feesRC)
-                let (fees, cardValid) = HTMLParser.parseFees(feesHTML)
-                data.fees = fees
-                data.cardValidUntil = cardValid
             } else {
                 let (feesHTML, _) = try await navigate(appURL: appURL, fromHTML: overviewHTML, navCode: "*SGG", rc: 3)
-                let (fees, cardValid) = HTMLParser.parseFees(feesHTML)
-                data.fees = fees
-                data.cardValidUntil = cardValid
+                applyFees(from: feesHTML, to: &data)
+                await logout(appURL: appURL, fromHTML: feesHTML, rc: 4)
             }
         } else {
             // Keine Ausleihen laut Übersicht → direkt Gebühren
             let (feesHTML, _) = try await navigate(appURL: appURL, fromHTML: overviewHTML, navCode: "*SGG", rc: 3)
-            let (fees, cardValid) = HTMLParser.parseFees(feesHTML)
-            data.fees = fees
-            data.cardValidUntil = cardValid
+            applyFees(from: feesHTML, to: &data)
+            await logout(appURL: appURL, fromHTML: feesHTML, rc: 4)
         }
 
         data.lastUpdated = Date()
         return data
+    }
+
+    /// Läuft in einer frischen Session: Login → Ausleihen → "Markierte Medien
+    /// verlängerbar?"-Probe. Wird von fetchAccountData auf einer zweiten
+    /// VOEBBSession-Instanz aufgerufen.
+    private func fetchRenewabilityRows(password: String) async throws -> [RenewabilityRow] {
+        let (appURL, overviewHTML) = try await login(password: password)
+        let (loansHTML, loansURL) = try await navigate(appURL: appURL, fromHTML: overviewHTML, navCode: "*SZA", rc: 3)
+        let loans = HTMLParser.parseLoans(loansHTML)
+        let checkboxes = loans.map(\.checkboxValue).filter { !$0.isEmpty }
+        guard !checkboxes.isEmpty else { return [] }
+
+        let probe = try await probeRenewability(
+            appURL: appURL, fromHTML: loansHTML, referer: loansURL, requestCount: 4,
+            checkboxValues: checkboxes
+        )
+        await logout(appURL: appURL, fromHTML: probe.html, rc: 5)
+        return probe.rows
+    }
+
+    /// Übernimmt Gebühren + Ausweisgültigkeit — aber nur, wenn die Antwort erkennbar
+    /// das Gebührenkonto ist. Sonst wird `feesUnknown` gesetzt, statt still 0 zu melden.
+    private func applyFees(from html: String, to data: inout AccountData) {
+        guard html.contains("Gebührenkonto") else {
+            data.feesUnknown = true
+            return
+        }
+        let (fees, cardValid) = HTMLParser.parseFees(html)
+        data.fees = fees
+        data.cardValidUntil = cardValid
+    }
+
+    /// Meldet die aDIS-Session serverseitig ab (Nav-Code *SE) — Fire-and-forget,
+    /// Fehler werden bewusst ignoriert. Reduziert verwaiste Sessions beim VÖBB.
+    private func logout(appURL: String, fromHTML: String, rc: Int) async {
+        _ = try? await navigate(appURL: appURL, fromHTML: fromHTML, navCode: "*SE", rc: rc)
     }
 
     /// Renews all renewable loans.
@@ -129,12 +159,14 @@ public final class VOEBBSession {
         let loans = HTMLParser.parseLoans(loansHTML)
 
         guard !loans.isEmpty else {
+            await logout(appURL: appURL, fromHTML: loansHTML, rc: 4)
             return RenewalOutcome(specialMessage: "Keine Ausleihen vorhanden")
         }
 
         // Only the selected candidates are probed/renewed — never touch the others.
         let candidateCheckboxes = loans.filter(select).map(\.checkboxValue).filter { !$0.isEmpty }
         guard !candidateCheckboxes.isEmpty else {
+            await logout(appURL: appURL, fromHTML: loansHTML, rc: 4)
             return RenewalOutcome()
         }
 
@@ -150,6 +182,7 @@ public final class VOEBBSession {
         let blocked = statuses.filter { !$0.renewable }
 
         guard !renewable.isEmpty else {
+            await logout(appURL: appURL, fromHTML: probe.html, rc: 5)
             return RenewalOutcome(renewed: [], blocked: blocked)
         }
 
@@ -171,6 +204,7 @@ public final class VOEBBSession {
             outcome.verificationNote = "Verlängerung konnte nicht bestätigt werden – die Fälligkeitsdaten sind unverändert. Bitte Liste prüfen."
         }
 
+        await logout(appURL: appURL, fromHTML: resultHTML, rc: 6)
         return outcome
     }
 

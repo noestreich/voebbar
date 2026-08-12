@@ -112,6 +112,10 @@ public struct AccountData: Codable {
     public var cardValidUntil: String = ""
     public var lastUpdated: Date = Date()
     public var error: String?
+    /// true, wenn die Gebührenseite nicht abrufbar/erkennbar war — dann ist `fees`
+    /// nicht aussagekräftig und sollte nicht als "0" angezeigt werden.
+    /// (Optional, damit gecachte Daten älterer App-Versionen dekodierbar bleiben.)
+    public var feesUnknown: Bool? = nil
 
     public init(account: LibraryAccount) {
         self.account = account

@@ -70,7 +70,14 @@ final class AppModel: ObservableObject {
             }
             do {
                 let session = VOEBBSession(account: account)
-                results.append(try await session.fetchAccountData(password: password))
+                var fetched = try await session.fetchAccountData(password: password)
+                // Gebührenseite nicht erreichbar/erkennbar → letzten bekannten
+                // Stand behalten statt fälschlich 0,00 € anzuzeigen.
+                if fetched.feesUnknown == true,
+                   let previous = accountData.first(where: { $0.account.cardNumber == account.cardNumber }) {
+                    fetched.fees = previous.fees
+                }
+                results.append(fetched)
             } catch {
                 var data = AccountData(account: account)
                 data.error = error.localizedDescription
