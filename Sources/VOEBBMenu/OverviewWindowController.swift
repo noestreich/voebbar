@@ -153,7 +153,7 @@ final class OverviewWindowController: NSObject, NSWindowDelegate {
         let urgent = allLoans.filter { $0.loan.daysUntilDue < 7 }.count
         var parts = ["\(total) Ausleihe\(total == 1 ? "" : "n")"]
         if urgent > 0 {
-            parts.append("📕 \(urgent) bald fällig")
+            parts.append("\(urgent) bald fällig")
         }
         label.stringValue = parts.joined(separator: "  ·  ")
     }
@@ -218,7 +218,8 @@ extension OverviewWindowController: NSTableViewDelegate {
 
         switch tableColumn?.identifier.rawValue {
         case "emoji":
-            cell.stringValue = loan.bookEmoji
+            cell.stringValue = "●"
+            cell.textColor = loan.urgencyNSColor
             cell.alignment = .center
 
         case "title":

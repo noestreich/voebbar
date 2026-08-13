@@ -219,13 +219,23 @@ final class StatusBarController: NSObject {
     // MARK: - Account Section
 
     private func addAccountSection(to menu: NSMenu, data: AccountData) {
-        // Konto-Überschrift (fett)
+        // Konto-Überschrift (fett), mit Abholcode in Grau
         let headerItem = NSMenuItem(title: data.account.name, action: nil, keyEquivalent: "")
         headerItem.isEnabled = false
-        headerItem.attributedTitle = NSAttributedString(
+        let header = NSMutableAttributedString(
             string: data.account.name,
             attributes: [.font: NSFont.boldSystemFont(ofSize: 13)]
         )
+        if let code = data.pickupCode {
+            header.append(NSAttributedString(
+                string: "  (\(code))",
+                attributes: [
+                    .font: NSFont.systemFont(ofSize: 12),
+                    .foregroundColor: NSColor.secondaryLabelColor,
+                ]
+            ))
+        }
+        headerItem.attributedTitle = header
         menu.addItem(headerItem)
 
         if let error = data.error {
@@ -233,30 +243,33 @@ final class StatusBarController: NSObject {
             return
         }
 
-        // Ausleihen-Zeile
+        // Ausleihen-Zeile mit Ampel-Punkt
         if data.loans.isEmpty {
-            add(to: menu, title: "  📗  Keine Ausleihen", enabled: false)
+            let item = add(to: menu, title: "", enabled: false)
+            item.attributedTitle = dotMenuTitle("Keine Ausleihen", color: .systemGreen)
         } else {
-            let urgencyEmoji = urgencyBadge(for: data)
-            let loanItem = add(to: menu,
-                               title: "  \(urgencyEmoji)  \(data.loans.count) Ausleihe\(data.loans.count == 1 ? "" : "n")",
-                               enabled: false)
+            let loanItem = add(to: menu, title: "", enabled: false)
+            loanItem.attributedTitle = dotMenuTitle(
+                "\(data.loans.count) Ausleihe\(data.loans.count == 1 ? "" : "n")",
+                color: accountUrgencyColor(for: data)
+            )
             if let days = data.daysUntilNextDue {
                 loanItem.toolTip = "Nächste Rückgabe: \(data.nextDueDateString ?? "") (\(days) Tag\(days == 1 ? "" : "e"))"
             }
 
             if let nextDate = data.nextDueDateString {
-                let days = data.daysUntilNextDue ?? 0
-                let icon = days < 7 ? "📅" : "📅"
-                add(to: menu, title: "  \(icon)  Nächste Rückgabe: \(nextDate)", enabled: false)
+                add(to: menu, title: "      Nächste Rückgabe: \(nextDate)", enabled: false)
             }
         }
 
-        // Gebühren
+        // Gebühren + Ausweisgültigkeit
         if data.fees > 0 {
-            add(to: menu, title: String(format: "  💶  %.2f € Gebühren", data.fees), enabled: false)
+            add(to: menu, title: String(format: "      %.2f € Gebühren", data.fees), enabled: false)
         } else {
-            add(to: menu, title: "  ✅  Keine Gebühren", enabled: false)
+            add(to: menu, title: "      Keine Gebühren", enabled: false)
+        }
+        if !data.cardValidUntil.isEmpty {
+            add(to: menu, title: "      Ausweis gültig bis \(data.cardValidUntil)", enabled: false)
         }
 
         // Verlängern-Buttons
@@ -269,21 +282,31 @@ final class StatusBarController: NSObject {
                 menu.addItem(dueItem)
             }
 
-            let renewItem = NSMenuItem(title: "  ↺  Alle verlängern", action: #selector(onRenew(_:)), keyEquivalent: "")
+            let renewItem = NSMenuItem(title: "  ↺  Verlängerbare verlängern", action: #selector(onRenew(_:)), keyEquivalent: "")
             renewItem.target = self
             renewItem.representedObject = data.account.cardNumber
             menu.addItem(renewItem)
         }
 
-        // Bücherlist als Untermenü
+        // Bücherliste als Untermenü — Klick auf ein Medium verlängert es einzeln
         if !data.loans.isEmpty {
-            let subItem = NSMenuItem(title: "  📖  Ausgeliehene Medien", action: nil, keyEquivalent: "")
+            let subItem = NSMenuItem(title: "  Ausgeliehene Medien", action: nil, keyEquivalent: "")
             let submenu = NSMenu()
+            submenu.autoenablesItems = false
             for loan in data.loans.sorted(by: { $0.dueDate < $1.dueDate }) {
                 let short = truncate(loan.title, to: Self.maxTitleLength)
-                let menuItem = NSMenuItem(title: "\(loan.bookEmoji)  \(short)", action: nil, keyEquivalent: "")
-                menuItem.toolTip = "\(loan.title)\n📅 Fällig: \(loan.dueDateString)\n🏛 \(loan.library)"
-                menuItem.isEnabled = false
+                let menuItem = NSMenuItem(title: short, action: #selector(onRenewSingle(_:)), keyEquivalent: "")
+                menuItem.attributedTitle = dotMenuTitle(short, color: loan.urgencyNSColor, indent: "")
+                menuItem.target = self
+                menuItem.representedObject = [data.account.cardNumber, loan.checkboxValue]
+                var tip = "\(loan.title)\nFällig: \(loan.dueDateString)\n\(loan.library)"
+                if loan.isRenewable == false {
+                    let reason = RenewabilityRow.shorten(loan.renewalReason)
+                    tip += "\nNicht verlängerbar\(reason.isEmpty ? "" : ": \(reason)")"
+                } else {
+                    tip += "\nKlicken zum Verlängern"
+                }
+                menuItem.toolTip = tip
                 submenu.addItem(menuItem)
             }
             subItem.submenu = submenu
@@ -293,12 +316,12 @@ final class StatusBarController: NSObject {
 
     // MARK: - Helpers
 
-    /// Dringlichkeits-Emoji für eine Account-Zusammenfassung
-    private func urgencyBadge(for data: AccountData) -> String {
-        guard let days = data.daysUntilNextDue else { return "📗" }
-        if days < 7  { return "📕" }
-        if days <= 14 { return "📙" }
-        return "📗"
+    /// Ampelfarbe für die Konto-Zusammenfassung (dringlichstes Medium zählt)
+    private func accountUrgencyColor(for data: AccountData) -> NSColor {
+        guard let days = data.daysUntilNextDue else { return .systemGreen }
+        if days < 7  { return .systemRed }
+        if days <= 14 { return .systemOrange }
+        return .systemGreen
     }
 
     private func truncate(_ s: String, to length: Int) -> String {
@@ -350,6 +373,36 @@ final class StatusBarController: NSObject {
               let data = currentData.first(where: { $0.account.cardNumber == cardNumber })
         else { return }
         renewDueSoon(for: data)
+    }
+
+    /// Klick auf ein Medium im "Ausgeliehene Medien"-Untermenü: einzeln verlängern
+    /// (nach Rückfrage — ein Menü-Klick soll nichts Unbeabsichtigtes auslösen).
+    @objc private func onRenewSingle(_ sender: NSMenuItem) {
+        guard let info = sender.representedObject as? [String], info.count == 2,
+              let data = currentData.first(where: { $0.account.cardNumber == info[0] }),
+              let loan = data.loans.first(where: { $0.checkboxValue == info[1] })
+        else { return }
+
+        if loan.isRenewable == false {
+            let reason = RenewabilityRow.shorten(loan.renewalReason)
+            showAlert(
+                title: truncate(loan.title, to: 60),
+                message: "Verlängerung derzeit nicht möglich\(reason.isEmpty ? "." : ":\n\(reason)")"
+            )
+            return
+        }
+
+        let alert = NSAlert()
+        alert.messageText = "Medium verlängern?"
+        alert.informativeText = "„\(loan.title)“\njetzt verlängern?"
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: "Verlängern")
+        alert.addButton(withTitle: "Abbrechen")
+        guard alert.runModal() == .alertFirstButtonReturn else { return }
+
+        performRenewal(for: data, title: truncate(loan.title, to: 60)) { session, password in
+            try await session.renewLoan(password: password, matching: loan)
+        }
     }
 
     private func showAlert(title: String, message: String) {
