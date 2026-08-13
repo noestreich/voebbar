@@ -219,12 +219,17 @@ final class StatusBarController: NSObject {
     // MARK: - Account Section
 
     private func addAccountSection(to menu: NSMenu, data: AccountData) {
-        // Konto-Überschrift (fett), mit Abholcode in Grau
-        let headerItem = NSMenuItem(title: data.account.name, action: nil, keyEquivalent: "")
-        headerItem.isEnabled = false
+        // Konto-Überschrift (fett), mit Abholcode in Grau. Der Eintrag ist aktiv
+        // (Klick öffnet die Übersicht) — deaktivierte Einträge würde macOS grau dimmen.
+        let headerItem = NSMenuItem(title: data.account.name, action: #selector(onOverview), keyEquivalent: "")
+        headerItem.target = self
+        headerItem.toolTip = "Alle Ausleihen anzeigen"
         let header = NSMutableAttributedString(
             string: data.account.name,
-            attributes: [.font: NSFont.boldSystemFont(ofSize: 13)]
+            attributes: [
+                .font: NSFont.boldSystemFont(ofSize: 13),
+                .foregroundColor: NSColor.labelColor,
+            ]
         )
         if let code = data.pickupCode {
             header.append(NSAttributedString(
@@ -293,6 +298,20 @@ final class StatusBarController: NSObject {
             let subItem = NSMenuItem(title: "  Ausgeliehene Medien", action: nil, keyEquivalent: "")
             let submenu = NSMenu()
             submenu.autoenablesItems = false
+
+            // Hinweis, dass ein Klick die Einzelverlängerung startet
+            let hintItem = NSMenuItem(title: "", action: nil, keyEquivalent: "")
+            hintItem.isEnabled = false
+            hintItem.attributedTitle = NSAttributedString(
+                string: "↺  Medium anklicken, um es einzeln zu verlängern",
+                attributes: [
+                    .font: NSFont.systemFont(ofSize: 11),
+                    .foregroundColor: NSColor.secondaryLabelColor,
+                ]
+            )
+            submenu.addItem(hintItem)
+            submenu.addItem(.separator())
+
             for loan in data.loans.sorted(by: { $0.dueDate < $1.dueDate }) {
                 let short = truncate(loan.title, to: Self.maxTitleLength)
                 let menuItem = NSMenuItem(title: short, action: #selector(onRenewSingle(_:)), keyEquivalent: "")
