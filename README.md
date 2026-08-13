@@ -21,7 +21,11 @@ Verlängerung auf Knopfdruck. Zwei Apps, ein gemeinsamer Kern (`VOEBBKit`):
 
 **[➡️ VÖPP im App Store](https://apps.apple.com/de/app/voebbar/id6790911430)**
 
-![VÖPP auf dem iPhone](assets/ios-screenshot.png)
+<p>
+  <img src="assets/shot-uebersicht.png" width="30%" alt="Alle Konten mit Ampel-Punkten und Gebühren" />
+  <img src="assets/shot-ausleihen.png" width="30%" alt="Detailansicht eines Mediums mit Verlängern-Button" />
+  <img src="assets/shot-konten.png" width="30%" alt="Kontenverwaltung mit Erinnerungs-Einstellung" />
+</p>
 
 **Ausleihen im Blick**
 - Alle Medien gruppiert nach Konto, sortiert nach Fälligkeit — Abschnitte ein-/ausklappbar
@@ -57,6 +61,8 @@ open iOS/VOEBBApp.xcodeproj   # in Xcode öffnen, iPhone wählen, Run
 ```
 
 ## macOS-Menüleisten-App
+
+<img src="assets/shot-mac.jpg" width="75%" alt="VÖPP-Menü in der macOS-Menüleiste" />
 
 **Menüleiste & Übersicht**
 - Anzahl aller ausgeliehenen Medien als Badge im Menüleisten-Symbol
