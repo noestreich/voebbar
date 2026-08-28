@@ -243,6 +243,18 @@ final class StatusBarController: NSObject {
         headerItem.attributedTitle = header
         menu.addItem(headerItem)
 
+        // VÖBBs Ausweis-Ablauf-Warnung — reine Info, keine Aktion
+        if let warning = data.cardExpiryWarning {
+            let warnItem = add(to: menu, title: "", enabled: false)
+            warnItem.attributedTitle = NSAttributedString(
+                string: "  ⚠  \(warning)",
+                attributes: [
+                    .font: NSFont.menuFont(ofSize: 0),
+                    .foregroundColor: NSColor.systemOrange,
+                ]
+            )
+        }
+
         if let error = data.error {
             add(to: menu, title: "  ⚠️  \(truncate(error, to: 50))", enabled: false)
             return

@@ -43,6 +43,9 @@ public final class VOEBBSession {
         if let cardValid = HTMLParser.parseAccountInfo(overviewHTML, term: "Ausweis gültig bis") {
             data.cardValidUntil = cardValid
         }
+        // VÖBBs Ablauf-Warnung ("Achtung" → "Ausweis läuft in N Tagen ab"):
+        // erscheint in der App genau dann, wenn die Webseite sie zeigt.
+        data.cardExpiryWarning = HTMLParser.parseAccountInfo(overviewHTML, term: "Achtung")
 
         let loanCount = HTMLParser.parseLoanCount(overviewHTML)
 

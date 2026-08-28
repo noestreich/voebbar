@@ -118,6 +118,9 @@ public struct AccountData: Codable {
     public var feesUnknown: Bool? = nil
     /// Abholcode für bereitgestellte Medien (z.B. "35 Da"), von der Kontoübersicht.
     public var pickupCode: String? = nil
+    /// VÖBBs Warnhinweis zum Ausweisablauf (z.B. "Ausweis läuft in 16 Tagen ab") —
+    /// gesetzt genau dann, wenn die Webseite die "Achtung"-Zeile anzeigt.
+    public var cardExpiryWarning: String? = nil
 
     public init(account: LibraryAccount) {
         self.account = account

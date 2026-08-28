@@ -169,6 +169,11 @@ struct ContentView: View {
 
         Section {
             if !isCollapsed {
+                // VÖBBs Ausweis-Ablauf-Warnung — reine Info, keine Aktion
+                if let warning = data.cardExpiryWarning {
+                    Label(warning, systemImage: "exclamationmark.triangle")
+                        .foregroundStyle(.orange)
+                }
                 if let error = data.error {
                     Label(error, systemImage: "exclamationmark.triangle")
                         .foregroundStyle(.red)
@@ -230,6 +235,11 @@ struct ContentView: View {
                         Text("(\(code))")
                             .font(.subheadline)
                             .foregroundStyle(Color.secondary)
+                    }
+                    if data.cardExpiryWarning != nil {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.caption)
+                            .foregroundStyle(Color.orange)
                     }
                     Spacer()
                     Text(String(format: "%.2f €", locale: Locale(identifier: "de_DE"), data.fees))
