@@ -281,52 +281,49 @@ struct LoanRow: View {
     var isRenewing: Bool = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            // Overline: Bibliothek als Ordnungskriterium — volle Zeile, immer sichtbar
-            Text(shortLibrary.uppercased())
-                .font(.caption2.weight(.semibold))
-                .kerning(0.5)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-
-            HStack(alignment: .center, spacing: 12) {
-                VStack(spacing: 4) {
-                    Circle()
-                        .fill(loan.urgencyColor)
-                        .frame(width: 10, height: 10)
-                    if loan.isBlocked {
-                        Image(systemName: "lock.fill")
-                            .font(.system(size: 8))
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(loan.displayTitle)
-                        .font(.subheadline.weight(.medium))
-                        .lineLimit(2)
-                    if let author = loan.displayAuthor {
-                        Text(author)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-                }
-                Spacer(minLength: 12)
-                VStack(alignment: .trailing, spacing: 3) {
-                    Text(loan.isOverdue ? "überfällig" : "\(loan.daysUntilDue) Tage")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(loan.urgencyColor)
-                    Text(loan.dueDateString)
-                        .font(.caption.monospacedDigit())
+        HStack(alignment: .center, spacing: 12) {
+            VStack(spacing: 4) {
+                Circle()
+                    .fill(loan.urgencyColor)
+                    .frame(width: 10, height: 10)
+                if loan.isBlocked {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 8))
                         .foregroundStyle(.secondary)
                 }
-                if isRenewing {
-                    ProgressView()
-                } else {
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
+            }
+            VStack(alignment: .leading, spacing: 3) {
+                Text(loan.displayTitle)
+                    .font(.subheadline.weight(.medium))
+                    .lineLimit(2)
+                // Bibliothek immer auf eigener, voller Zeile …
+                Text(shortLibrary)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                // … Autor darunter, nur wenn vorhanden
+                if let author = loan.displayAuthor {
+                    Text(author)
+                        .font(.caption2)
                         .foregroundStyle(.tertiary)
+                        .lineLimit(1)
                 }
+            }
+            Spacer(minLength: 12)
+            VStack(alignment: .trailing, spacing: 3) {
+                Text(loan.isOverdue ? "überfällig" : "\(loan.daysUntilDue) Tage")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(loan.urgencyColor)
+                Text(loan.dueDateString)
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+            if isRenewing {
+                ProgressView()
+            } else {
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
             }
         }
         .padding(.vertical, 4)
