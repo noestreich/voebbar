@@ -296,18 +296,18 @@ struct LoanRow: View {
                 Text(loan.displayTitle)
                     .font(.subheadline.weight(.medium))
                     .lineLimit(2)
-                // Bibliothek immer auf eigener, voller Zeile …
-                Text(shortLibrary)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                // … Autor darunter, nur wenn vorhanden
+                // Autor direkt am Titel (Werk-Einheit), falls vorhanden …
                 if let author = loan.displayAuthor {
                     Text(author)
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                         .lineLimit(1)
                 }
+                // … Bibliothek immer unten, an konstanter Position
+                Text(shortLibrary)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
             }
             Spacer(minLength: 12)
             VStack(alignment: .trailing, spacing: 3) {
