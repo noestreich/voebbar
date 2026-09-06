@@ -53,9 +53,9 @@ public final class VOEBBSession {
         // loanCount > 0   → Ausleihen vorhanden, Seite abrufen
         // loanCount == nil → Erkennung unsicher, Ausleihen trotzdem probieren
         if loanCount != 0 {
-            let (loansHTML, _) = try await navigate(appURL: appURL, fromHTML: overviewHTML, navCode: "*SZA", rc: 3)
+            let (loansHTML, _) = try await navigate(appURL: appURL, fromHTML: overviewHTML, navCode: "*SZA")
             var parsed = HTMLParser.parseLoans(loansHTML)
-            await logout(appURL: appURL, fromHTML: loansHTML, rc: 4)
+            await logout(appURL: appURL, fromHTML: loansHTML)
             // Ein Parserfehler darf nicht wie ein leeres Konto aussehen.
             try Self.validateLoans(parsed, expectedCount: loanCount, pageHTML: loansHTML)
 
@@ -83,7 +83,7 @@ public final class VOEBBSession {
                 data.loans = parsed
             }
         } else {
-            await logout(appURL: appURL, fromHTML: overviewHTML, rc: 3)
+            await logout(appURL: appURL, fromHTML: overviewHTML)
         }
 
         data.lastUpdated = Date()
@@ -95,16 +95,16 @@ public final class VOEBBSession {
     /// VOEBBSession-Instanz aufgerufen.
     private func fetchRenewabilityRows(password: String) async throws -> [RenewabilityRow] {
         let (appURL, overviewHTML) = try await login(password: password)
-        let (loansHTML, loansURL) = try await navigate(appURL: appURL, fromHTML: overviewHTML, navCode: "*SZA", rc: 3)
+        let (loansHTML, loansURL) = try await navigate(appURL: appURL, fromHTML: overviewHTML, navCode: "*SZA")
         let loans = HTMLParser.parseLoans(loansHTML)
         let checkboxes = loans.map(\.checkboxValue).filter { !$0.isEmpty }
         guard !checkboxes.isEmpty else { return [] }
 
         let probe = try await probeRenewability(
-            appURL: appURL, fromHTML: loansHTML, referer: loansURL, requestCount: 4,
+            appURL: appURL, fromHTML: loansHTML, referer: loansURL,
             checkboxValues: checkboxes
         )
-        await logout(appURL: appURL, fromHTML: probe.html, rc: 5)
+        await logout(appURL: appURL, fromHTML: probe.html)
         return probe.rows
     }
 
@@ -147,8 +147,8 @@ public final class VOEBBSession {
 
     /// Meldet die aDIS-Session serverseitig ab (Nav-Code *SE) — Fire-and-forget,
     /// Fehler werden bewusst ignoriert. Reduziert verwaiste Sessions beim VÖBB.
-    private func logout(appURL: String, fromHTML: String, rc: Int) async {
-        _ = try? await navigate(appURL: appURL, fromHTML: fromHTML, navCode: "*SE", rc: rc)
+    private func logout(appURL: String, fromHTML: String) async {
+        _ = try? await navigate(appURL: appURL, fromHTML: fromHTML, navCode: "*SE")
     }
 
     /// Renews all renewable loans.
@@ -181,24 +181,24 @@ public final class VOEBBSession {
     private func renewLoans(password: String, selecting select: (Loan) -> Bool) async throws -> RenewalOutcome {
         let (appURL, overviewHTML) = try await login(password: password)
 
-        let (loansHTML, loansURL) = try await navigate(appURL: appURL, fromHTML: overviewHTML, navCode: "*SZA", rc: 3)
+        let (loansHTML, loansURL) = try await navigate(appURL: appURL, fromHTML: overviewHTML, navCode: "*SZA")
         let loans = HTMLParser.parseLoans(loansHTML)
 
         guard !loans.isEmpty else {
-            await logout(appURL: appURL, fromHTML: loansHTML, rc: 4)
+            await logout(appURL: appURL, fromHTML: loansHTML)
             return RenewalOutcome(specialMessage: "Keine Ausleihen vorhanden")
         }
 
         // Only the selected candidates are probed/renewed — never touch the others.
         let candidateCheckboxes = loans.filter(select).map(\.checkboxValue).filter { !$0.isEmpty }
         guard !candidateCheckboxes.isEmpty else {
-            await logout(appURL: appURL, fromHTML: loansHTML, rc: 4)
+            await logout(appURL: appURL, fromHTML: loansHTML)
             return RenewalOutcome()
         }
 
         // Step 1: probe "verlängerbar?" ($Button$2) with only the candidates checked.
         let probe = try await probeRenewability(
-            appURL: appURL, fromHTML: loansHTML, referer: loansURL, requestCount: 4,
+            appURL: appURL, fromHTML: loansHTML, referer: loansURL,
             checkboxValues: candidateCheckboxes
         )
         // The probe reports on the marked media; restrict to our candidate set defensively.
@@ -208,14 +208,14 @@ public final class VOEBBSession {
         let blocked = statuses.filter { !$0.renewable }
 
         guard !renewable.isEmpty else {
-            await logout(appURL: appURL, fromHTML: probe.html, rc: 5)
+            await logout(appURL: appURL, fromHTML: probe.html)
             return RenewalOutcome(renewed: [], blocked: blocked)
         }
 
         // Step 2: renew only the confirmed-renewable candidates ($Button$1).
         let resultHTML = try await pressRenewalButton(
             appURL: appURL, fromHTML: probe.html, referer: appURL,
-            buttonField: "$Button$1", focusID: "$$GFBO_4", requestCount: 5,
+            buttonField: "$Button$1", focusID: "$$GFBO_4",
             checkboxValues: renewable.map(\.checkboxValue)
         )
 
@@ -230,19 +230,19 @@ public final class VOEBBSession {
             outcome.verificationNote = "Verlängerung konnte nicht bestätigt werden – die Fälligkeitsdaten sind unverändert. Bitte Liste prüfen."
         }
 
-        await logout(appURL: appURL, fromHTML: resultHTML, rc: 6)
+        await logout(appURL: appURL, fromHTML: resultHTML)
         return outcome
     }
 
     /// Presses "Markierte Medien verlängerbar?" ($Button$2, read-only) for the given
     /// checkboxes and parses the per-row renewability markers from the response.
     private func probeRenewability(
-        appURL: String, fromHTML: String, referer: String, requestCount: Int,
+        appURL: String, fromHTML: String, referer: String,
         checkboxValues: [String]
     ) async throws -> (html: String, rows: [RenewabilityRow]) {
         let html = try await pressRenewalButton(
             appURL: appURL, fromHTML: fromHTML, referer: referer,
-            buttonField: "$Button$2", focusID: "$$GFBO_7", requestCount: requestCount,
+            buttonField: "$Button$2", focusID: "$$GFBO_7",
             checkboxValues: checkboxValues
         )
         return (html, HTMLParser.parseRenewability(html))
@@ -253,11 +253,10 @@ public final class VOEBBSession {
     /// encoded manually (URLSession can't send duplicate keys via a dictionary).
     private func pressRenewalButton(
         appURL: String, fromHTML: String, referer: String,
-        buttonField: String, focusID: String, requestCount: Int,
+        buttonField: String, focusID: String,
         checkboxValues: [String]
     ) async throws -> String {
         var postData = extractHiddenInputs(fromHTML)
-        postData["requestCount"] = "\(requestCount)"
         postData["scriptEnabled"] = "true"
         postData["overrideScrollPos"] = "0"
         postData["focus"] = focusID
@@ -345,11 +344,14 @@ public final class VOEBBSession {
 
     // MARK: - Private: Navigation
 
-    private func navigate(appURL: String, fromHTML: String, navCode: String, rc: Int) async throws -> (html: String, url: String) {
+    // Der aDIS-Request-Zähler (`requestCount`) ist ein hidden field jeder Seite und wird
+    // wie im Browser unverändert zurückgesendet — nie mit festen Werten überschreiben:
+    // die Sequenz hängt von der Session-Historie ab (nach Login z.B. 5, nicht 3).
+
+    private func navigate(appURL: String, fromHTML: String, navCode: String) async throws -> (html: String, url: String) {
         var data = extractHiddenInputs(fromHTML)
         data["scriptEnabled"] = "true"
         data["overrideScrollPos"] = "0"
-        data["requestCount"] = "\(rc)"
         data["selected"] = "ZTEXT       \(navCode)"
         data["$Select"] = "Überall suchen"
 
