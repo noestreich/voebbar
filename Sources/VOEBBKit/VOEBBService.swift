@@ -370,29 +370,7 @@ public final class VOEBBSession {
     // MARK: - Helpers
 
     private func extractHiddenInputs(_ html: String) -> [String: String] {
-        var result: [String: String] = [:]
-        let pattern = try! NSRegularExpression(
-            pattern: #"<input[^>]+type=['"]hidden['"][^>]*>"#,
-            options: .caseInsensitive
-        )
-        let matches = pattern.matches(in: html, range: NSRange(html.startIndex..., in: html))
-        for match in matches {
-            guard let range = Range(match.range, in: html) else { continue }
-            let tag = String(html[range])
-            let name = extractAttr(tag, attr: "name")
-            let value = extractAttr(tag, attr: "value") ?? ""
-            if let name = name { result[name] = value }
-        }
-        return result
-    }
-
-    private func extractAttr(_ tag: String, attr: String) -> String? {
-        let pattern = "\(attr)=['\"]([^'\"]*)['\"]"
-        guard let m = tag.range(of: pattern, options: [.regularExpression, .caseInsensitive]) else { return nil }
-        let matchStr = String(tag[m])
-        // Extract value between quotes
-        let parts = matchStr.components(separatedBy: CharacterSet(charactersIn: "\"'"))
-        return parts.count >= 2 ? parts[1] : nil
+        HTMLParser.extractHiddenInputs(html)
     }
 
     private func urlEncode(_ string: String) -> String {

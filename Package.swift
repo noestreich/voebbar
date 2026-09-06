@@ -17,5 +17,12 @@ let package = Package(
             dependencies: ["VOEBBKit"],
             path: "Sources/VOEBBMenu"
         ),
+        .testTarget(
+            name: "VOEBBKitTests",
+            dependencies: ["VOEBBKit"],
+            path: "Tests/VOEBBKitTests",
+            exclude: ["anonymize_fixtures.py"],
+            resources: [.copy("Fixtures")]
+        ),
     ]
 )

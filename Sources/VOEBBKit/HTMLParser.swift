@@ -165,6 +165,35 @@ enum HTMLParser {
         return rows
     }
 
+    // MARK: - Forms
+
+    /// All hidden <input> fields of a page (name → value). aDIS pages carry their
+    /// navigation state here (identity token, requestCount, …), which every follow-up
+    /// POST has to echo back.
+    static func extractHiddenInputs(_ html: String) -> [String: String] {
+        var result: [String: String] = [:]
+        let pattern = try! NSRegularExpression(
+            pattern: #"<input[^>]+type=['"]hidden['"][^>]*>"#,
+            options: .caseInsensitive
+        )
+        let matches = pattern.matches(in: html, range: NSRange(html.startIndex..., in: html))
+        for match in matches {
+            guard let range = Range(match.range, in: html) else { continue }
+            let tag = String(html[range])
+            if let name = extractAttr(tag, attr: "name") {
+                result[name] = extractAttr(tag, attr: "value") ?? ""
+            }
+        }
+        return result
+    }
+
+    private static func extractAttr(_ tag: String, attr: String) -> String? {
+        let pattern = "\(attr)=['\"]([^'\"]*)['\"]"
+        guard let m = tag.range(of: pattern, options: [.regularExpression, .caseInsensitive]) else { return nil }
+        let parts = String(tag[m]).components(separatedBy: CharacterSet(charactersIn: "\"'"))
+        return parts.count >= 2 ? parts[1] : nil
+    }
+
     // MARK: - Helpers
 
     /// Title column: split on <br>, drop leading media-type tags like "[DVD-Video]".
