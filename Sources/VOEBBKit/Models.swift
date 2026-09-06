@@ -28,12 +28,21 @@ public struct Loan: Codable {
     /// Überfällig erst ab dem Tag NACH dem Fälligkeitsdatum — am Fälligkeitstag selbst
     /// ist das Buch noch regulär zurückgebbar/verlängerbar. (dueDate ist Mitternacht
     /// des Fälligkeitstags, daher Vergleich gegen Tagesbeginn heute.)
-    public var isOverdue: Bool {
-        dueDate < Calendar.current.startOfDay(for: Date())
+    public var isOverdue: Bool { isOverdue(relativeTo: Date()) }
+
+    /// Kalendertage bis zur Fälligkeit (heute = 0, morgen = 1), überfällig → 0.
+    public var daysUntilDue: Int { daysUntilDue(relativeTo: Date()) }
+
+    func isOverdue(relativeTo now: Date, calendar: Calendar = .current) -> Bool {
+        dueDate < calendar.startOfDay(for: now)
     }
 
-    public var daysUntilDue: Int {
-        max(0, Calendar.current.dateComponents([.day], from: Date(), to: dueDate).day ?? 0)
+    /// Vergleicht Tagesanfang mit Tagesanfang — ein Vergleich von "jetzt" mit Mitternacht
+    /// des Fälligkeitstags ergäbe für "morgen fällig" tagsüber fälschlich 0.
+    func daysUntilDue(relativeTo now: Date, calendar: Calendar = .current) -> Int {
+        let today = calendar.startOfDay(for: now)
+        let due = calendar.startOfDay(for: dueDate)
+        return max(0, calendar.dateComponents([.day], from: today, to: due).day ?? 0)
     }
 
     /// 📕 < 7 Tage  📙 7–14 Tage  📗 > 14 Tage

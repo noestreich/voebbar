@@ -178,11 +178,15 @@ struct ContentView: View {
                         .foregroundStyle(.orange)
                 }
                 if let error = data.error {
-                    Label(error, systemImage: "exclamationmark.triangle")
+                    Label(data.loans.isEmpty ? error : "\(error) — angezeigt wird der letzte bekannte Stand",
+                          systemImage: "exclamationmark.triangle")
                         .foregroundStyle(.red)
-                } else if data.loans.isEmpty {
-                    Text("Keine Ausleihen")
-                        .foregroundStyle(.secondary)
+                }
+                if data.loans.isEmpty {
+                    if data.error == nil {
+                        Text("Keine Ausleihen")
+                            .foregroundStyle(.secondary)
+                    }
                 } else {
                     ForEach(data.loans.sorted(by: { $0.dueDate < $1.dueDate }), id: \.checkboxValue) { loan in
                         Button {

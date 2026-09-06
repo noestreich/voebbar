@@ -76,7 +76,9 @@ final class StatusBarController: NSObject {
                     let data = try await voebbSession.fetchAccountData(password: password)
                     results.append(data)
                 } catch {
-                    var data = AccountData(account: account)
+                    // Abruf fehlgeschlagen → letzten bekannten Stand behalten, nur markieren
+                    var data = currentData.first(where: { $0.account.cardNumber == account.cardNumber })
+                        ?? AccountData(account: account)
                     data.error = error.localizedDescription
                     results.append(data)
                 }
@@ -256,14 +258,16 @@ final class StatusBarController: NSObject {
         }
 
         if let error = data.error {
-            add(to: menu, title: "  ⚠️  \(truncate(error, to: 50))", enabled: false)
-            return
+            let item = add(to: menu, title: "  ⚠️  \(truncate(error, to: 60))", enabled: false)
+            item.toolTip = data.loans.isEmpty ? error : "\(error)\nAngezeigt wird der letzte bekannte Stand."
         }
 
         // Ausleihen-Zeile mit Ampel-Punkt
         if data.loans.isEmpty {
-            let item = add(to: menu, title: "", enabled: false)
-            item.attributedTitle = dotMenuTitle("Keine Ausleihen", color: .systemGreen)
+            if data.error == nil {
+                let item = add(to: menu, title: "", enabled: false)
+                item.attributedTitle = dotMenuTitle("Keine Ausleihen", color: .systemGreen)
+            }
         } else {
             let loanItem = add(to: menu, title: "", enabled: false)
             loanItem.attributedTitle = dotMenuTitle(

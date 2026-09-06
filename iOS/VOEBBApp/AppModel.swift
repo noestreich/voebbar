@@ -79,7 +79,10 @@ final class AppModel: ObservableObject {
                 }
                 results.append(fetched)
             } catch {
-                var data = AccountData(account: account)
+                // Abruf fehlgeschlagen → letzten bekannten Stand behalten (lastUpdated
+                // bleibt alt), nur mit Fehlermarkierung versehen.
+                var data = accountData.first(where: { $0.account.cardNumber == account.cardNumber })
+                    ?? AccountData(account: account)
                 data.error = error.localizedDescription
                 results.append(data)
             }

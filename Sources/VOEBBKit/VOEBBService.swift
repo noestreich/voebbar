@@ -56,6 +56,8 @@ public final class VOEBBSession {
             let (loansHTML, _) = try await navigate(appURL: appURL, fromHTML: overviewHTML, navCode: "*SZA", rc: 3)
             var parsed = HTMLParser.parseLoans(loansHTML)
             await logout(appURL: appURL, fromHTML: loansHTML, rc: 4)
+            // Ein Parserfehler darf nicht wie ein leeres Konto aussehen.
+            try Self.validateLoans(parsed, expectedCount: loanCount, pageHTML: loansHTML)
 
             if !parsed.isEmpty {
                 // Verlängerbarkeit in einer EIGENEN Session proben (frische Cookies,
@@ -104,6 +106,27 @@ public final class VOEBBSession {
         )
         await logout(appURL: appURL, fromHTML: probe.html, rc: 5)
         return probe.rows
+    }
+
+    /// Plausibilisiert die geparste Ausleihliste gegen die Zahl aus der Kontoübersicht.
+    /// Meldet die Übersicht N Ausleihen, die Seite liefert aber weniger (oder gar keine
+    /// erkennbare Ausleihliste), ist das ein Parser-/Seitenfehler — kein leeres Konto.
+    static func validateLoans(_ parsed: [Loan], expectedCount: Int?, pageHTML: String) throws {
+        if let expected = expectedCount {
+            guard expected > 0 else { return }  // Übersicht sagt explizit: keine Ausleihen
+            if parsed.isEmpty {
+                throw VOEBBError.parseError("Ausleihseite nicht lesbar – die Übersicht meldet \(expected) Ausleihen")
+            }
+            if parsed.count < expected {
+                throw VOEBBError.parseError("Nur \(parsed.count) von \(expected) Ausleihen gelesen")
+            }
+        } else if parsed.isEmpty {
+            // Übersicht war nicht lesbar: dann muss wenigstens die Seite als Ausleihliste erkennbar sein
+            let looksLikeLoansPage = pageHTML.contains("Meine Ausleihen") || pageHTML.contains("rTable")
+            if !looksLikeLoansPage {
+                throw VOEBBError.parseError("Ausleihseite nicht erkannt")
+            }
+        }
     }
 
     /// Liest die fälligen Gebühren aus der <dl>-Liste der Kontoübersicht.
