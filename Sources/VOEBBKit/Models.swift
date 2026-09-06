@@ -74,17 +74,26 @@ public struct RenewabilityRow {
 }
 
 /// Result of the two-step renewal (probe → renew only renewable items).
+///
+/// `renewed` contains only items whose due date demonstrably moved on the result page.
+/// Items that were submitted but whose due date stayed unchanged land in `unconfirmed`;
+/// if the result page could not be read as a loans list at all, `unverifiable` is set
+/// and every submitted item is `unconfirmed`.
 public struct RenewalOutcome {
     public let renewed: [RenewabilityRow]
     public let blocked: [RenewabilityRow]
-    /// Set for special cases (e.g. no loans at all); otherwise nil and the message is built from renewed/blocked.
+    public let unconfirmed: [RenewabilityRow]
+    public let unverifiable: Bool
+    /// Set for special cases (e.g. no loans at all); otherwise nil and the message is built from the lists.
     public let specialMessage: String?
-    /// Warning appended when the renewal submit could not be confirmed from the response.
-    public var verificationNote: String?
 
-    public init(renewed: [RenewabilityRow] = [], blocked: [RenewabilityRow] = [], specialMessage: String? = nil) {
+    public init(renewed: [RenewabilityRow] = [], blocked: [RenewabilityRow] = [],
+                unconfirmed: [RenewabilityRow] = [], unverifiable: Bool = false,
+                specialMessage: String? = nil) {
         self.renewed = renewed
         self.blocked = blocked
+        self.unconfirmed = unconfirmed
+        self.unverifiable = unverifiable
         self.specialMessage = specialMessage
     }
 
@@ -93,9 +102,18 @@ public struct RenewalOutcome {
 
         var lines: [String] = []
         if renewed.isEmpty {
-            lines.append("Keine Medien verlängert.")
+            lines.append(unconfirmed.isEmpty ? "Keine Medien verlängert." : "Keine Verlängerung bestätigt.")
         } else {
             lines.append("\(renewed.count) \(renewed.count == 1 ? "Medium" : "Medien") verlängert.")
+        }
+        if !unconfirmed.isEmpty {
+            lines.append("")
+            if unverifiable {
+                lines.append("⚠️ Das Ergebnis konnte nicht überprüft werden – bitte die Ausleihliste kontrollieren:")
+            } else {
+                lines.append("⚠️ Nicht bestätigt (Fälligkeit unverändert):")
+            }
+            lines.append(contentsOf: unconfirmed.map { "• \($0.title.isEmpty ? "Unbekannter Titel" : $0.title)" })
         }
         if !blocked.isEmpty {
             lines.append("")
@@ -105,10 +123,6 @@ public struct RenewalOutcome {
                 let reason = item.shortReason.isEmpty ? "" : " – \(item.shortReason)"
                 lines.append("• \(title)\(reason)")
             }
-        }
-        if let verificationNote {
-            lines.append("")
-            lines.append("⚠️ \(verificationNote)")
         }
         return lines.joined(separator: "\n")
     }

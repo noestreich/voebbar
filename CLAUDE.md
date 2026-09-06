@@ -31,7 +31,7 @@ xcodebuild -project iOS/VOEBBApp.xcodeproj -scheme VOEBBApp -destination 'generi
 
 or open `iOS/VOEBBApp.xcodeproj` in Xcode and run on a device. The project references the root package via a local-package reference (`relativePath = ..`); signing is automatic with team `9H7F5NMT97`, bundle id `de.ncls.voebbar`.
 
-`swift test` currently fails with "no tests found" — `Tests/VOEBBMenuTests` exists (Swift Testing framework, one empty stub) but `Package.swift` declares no test target. If you add real tests, wire up a `testTarget` in `Package.swift` first (against `VOEBBKit`).
+`swift test` runs the `VOEBBKitTests` target (XCTest, `@testable import VOEBBKit`). Parser tests use anonymized real pages in `Tests/VOEBBKitTests/Fixtures/` (overview + loans list); regenerate them from a fresh HAR with `Tests/VOEBBKitTests/anonymize_fixtures.py` — never commit a raw HAR. The fixtures are frozen: they catch our regressions, not VÖBB markup changes.
 
 No linter/formatter is configured.
 
@@ -52,7 +52,8 @@ This is the core and most fragile part of the app. VÖBB's site (`aDISWeb`, an A
 - Fees, pickup code ("Abholcode"), and card validity are all parsed from the **overview page's** `<dt>/<dd>` list via `HTMLParser.parseAccountInfo` — no `*SGG` navigation at all. `applyFees` treats a missing fees row as 0 only when the overview is recognizable by its other `<dt>` terms; otherwise it sets `feesUnknown` instead of reporting 0 (the iOS app then keeps the last known amount).
 
 ### Renewal flow
-Both VÖBB renewal buttons ("Alle verlängern" and "Markierte Medien verlängern") abort the **entire batch** if any selected loan is blocked (e.g. by a hold/"Vormerkung"). `renewAllLoans()` therefore runs a two-step flow: first probe renewability via "Markierte Medien verlängerbar?" (`$Button$2`, read-only), then submit only the confirmed-renewable checkboxes via "Markierte Medien verlängern" (`$Button$1`). Button-field ↔ action mapping was reverse-engineered from live HTML; buttons are position-numbered (`$Button$0` = Alle verlängern). The result is a `RenewalOutcome` (renewed + blocked incl. per-item reason).
+Both VÖBB renewal buttons ("Alle verlängern" and "Markierte Medien verlängern") abort the **entire batch** if any selected loan is blocked (e.g. by a hold/"Vormerkung"). `renewAllLoans()` therefore runs a two-step flow: first probe renewability via "Markierte Medien verlängerbar?" (`$Button$2`, read-only), then submit only the confirmed-renewable checkboxes via "Markierte Medien verlängern" (`$Button$1`). Button-field ↔ action mapping was reverse-engineered from live HTML; buttons are position-numbered (`$Button$0` = Alle verlängern). Success is **never** inferred from the probe: `RenewalVerifier` compares each submitted item's due date before/after on the result page (matched by title + library, duplicate copies counted per group) — only a later date counts as `renewed`, unchanged dates go to `unconfirmed`, an unreadable result page sets `unverifiable`. There are no explicit success markers in aDIS's response to rely on.
+- `requestCount` is a hidden field on every aDIS page and must be echoed back as-is (the sequence depends on session history); never hardcode it. HTTP 4xx/5xx throws `networkError` so an error page can't parse as an empty list.
 
 ### Storage
 - `AccountStorage` (UserDefaults key `voebb_accounts_v1`) — account metadata (name + card number), the refresh interval (`voebb_refresh_interval_hours`, constrained to `AccountStorage.availableRefreshIntervalsHours`), and the "due soon" threshold in days for the per-account "Fällige verlängern" action (`voebb_renewal_due_days`, constrained to `availableRenewalDueDays`).

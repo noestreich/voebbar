@@ -219,19 +219,21 @@ public final class VOEBBSession {
             checkboxValues: renewable.map(\.checkboxValue)
         )
 
-        var outcome = RenewalOutcome(renewed: renewable, blocked: blocked)
-
-        // Sanity check: if the response renders the loans table again and its due dates are
-        // completely unchanged, the submit likely didn't take effect — warn instead of
-        // claiming success. (If the response isn't a loans table, we can't verify; stay quiet.)
-        let afterLoans = HTMLParser.parseLoans(resultHTML)
-        if !afterLoans.isEmpty,
-           afterLoans.map(\.dueDateString).sorted() == loans.map(\.dueDateString).sorted() {
-            outcome.verificationNote = "Verlängerung konnte nicht bestätigt werden – die Fälligkeitsdaten sind unverändert. Bitte Liste prüfen."
-        }
+        // Erfolg nur pro Medium anhand des verschobenen Fälligkeitsdatums auf der
+        // Antwortseite melden — nie allein aus dem Probe-Ergebnis ableiten.
+        let verification = RenewalVerifier.verify(
+            submitted: renewable,
+            before: loans,
+            after: HTMLParser.parseLoans(resultHTML)
+        )
 
         await logout(appURL: appURL, fromHTML: resultHTML)
-        return outcome
+        return RenewalOutcome(
+            renewed: verification.confirmed,
+            blocked: blocked,
+            unconfirmed: verification.unconfirmed,
+            unverifiable: verification.unverifiable
+        )
     }
 
     /// Presses "Markierte Medien verlängerbar?" ($Button$2, read-only) for the given
@@ -367,8 +369,18 @@ public final class VOEBBSession {
         req.addValue("de-DE,de;q=0.9", forHTTPHeaderField: "Accept-Language")
         req.addValue("text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", forHTTPHeaderField: "Accept")
 
-        let (data, _) = try await session.data(for: req)
+        let (data, response) = try await session.data(for: req)
+        try Self.checkStatus(response)
         return String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1) ?? ""
+    }
+
+    /// aDIS antwortet fachlich immer mit 200; ein 4xx/5xx ist ein Infrastruktur-Fehler,
+    /// dessen Fehlerseite nie als "leere Liste" oder "Erfolg" durchgehen darf.
+    private static func checkStatus(_ response: URLResponse) throws {
+        guard let http = response as? HTTPURLResponse else { return }
+        if http.statusCode >= 400 {
+            throw VOEBBError.networkError("Server antwortet mit HTTP \(http.statusCode)")
+        }
     }
 
     private func post(url: String, data: [String: String], referer: String) async throws -> String {
@@ -388,7 +400,8 @@ public final class VOEBBSession {
             req.addValue(referer, forHTTPHeaderField: "Referer")
         }
 
-        let (data, _) = try await session.data(for: req)
+        let (data, response) = try await session.data(for: req)
+        try Self.checkStatus(response)
         return String(data: data, encoding: .utf8) ?? String(data: data, encoding: .isoLatin1) ?? ""
     }
 
