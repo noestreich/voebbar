@@ -183,6 +183,13 @@ public final class VOEBBSession {
 
         let (loansHTML, loansURL) = try await navigate(appURL: appURL, fromHTML: overviewHTML, navCode: "*SZA")
         let loans = HTMLParser.parseLoans(loansHTML)
+        // Eine unlesbare Ausleihseite darf nicht als "Keine Ausleihen vorhanden" enden.
+        do {
+            try Self.validateLoans(loans, expectedCount: HTMLParser.parseLoanCount(overviewHTML), pageHTML: loansHTML)
+        } catch {
+            await logout(appURL: appURL, fromHTML: loansHTML)
+            throw error
+        }
 
         guard !loans.isEmpty else {
             await logout(appURL: appURL, fromHTML: loansHTML)
@@ -204,6 +211,14 @@ public final class VOEBBSession {
         // The probe reports on the marked media; restrict to our candidate set defensively.
         let candidateSet = Set(candidateCheckboxes)
         let statuses = probe.rows.filter { candidateSet.contains($0.checkboxValue) }
+        // Jede markierte Zeile muss einen Marker tragen — sonst ist die Antwort keine
+        // Probe-Seite (Session-Fehler o.ä.) und der Status der Medien unbekannt.
+        guard statuses.count == candidateCheckboxes.count else {
+            await logout(appURL: appURL, fromHTML: probe.html)
+            throw VOEBBError.parseError(
+                "Verlängerbarkeits-Prüfung nicht lesbar (\(statuses.count) von \(candidateCheckboxes.count) Medien erkannt)"
+            )
+        }
         let renewable = statuses.filter { $0.renewable }
         let blocked = statuses.filter { !$0.renewable }
 
@@ -259,6 +274,7 @@ public final class VOEBBSession {
         checkboxValues: [String]
     ) async throws -> String {
         var postData = extractHiddenInputs(fromHTML)
+        _ = try Self.requiredRequestCount(in: postData)
         postData["scriptEnabled"] = "true"
         postData["overrideScrollPos"] = "0"
         postData["focus"] = focusID
@@ -350,8 +366,19 @@ public final class VOEBBSession {
     // wie im Browser unverändert zurückgesendet — nie mit festen Werten überschreiben:
     // die Sequenz hängt von der Session-Historie ab (nach Login z.B. 5, nicht 3).
 
+    /// aDIS erwartet den Zähler bei jedem Folge-Request. Fehlt er, ist die aktuelle Seite
+    /// keine reguläre aDIS-Seite (Session abgelaufen, Fehlerseite) — dann lieber sauber
+    /// abbrechen als einen kaputten Request abzuschicken.
+    static func requiredRequestCount(in hidden: [String: String]) throws -> String {
+        guard let rc = hidden["requestCount"], Int(rc) != nil else {
+            throw VOEBBError.parseError("Seite ohne gültigen Request-Zähler – Sitzung ungültig?")
+        }
+        return rc
+    }
+
     private func navigate(appURL: String, fromHTML: String, navCode: String) async throws -> (html: String, url: String) {
         var data = extractHiddenInputs(fromHTML)
+        _ = try Self.requiredRequestCount(in: data)
         data["scriptEnabled"] = "true"
         data["overrideScrollPos"] = "0"
         data["selected"] = "ZTEXT       \(navCode)"

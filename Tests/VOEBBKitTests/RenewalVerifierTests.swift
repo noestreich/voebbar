@@ -78,6 +78,40 @@ final class RenewalVerifierTests: XCTestCase {
         XCTAssertEqual(r.unconfirmed.count, 1)
     }
 
+    func testPreexistingLaterCopyIsNotCountedAsSuccess() {
+        // ChatGPT-Fall: Exemplar B war schon vorher später fällig; nur A eingereicht;
+        // Antwort unverändert → keine Verlängerung, auch wenn ein späteres Datum existiert.
+        let before = [loan("A", due: 5, cb: "c0"), loan("A", due: 26, cb: "c1")]
+        let r = RenewalVerifier.verify(submitted: [row("A", cb: "c0")], before: before, after: before)
+        XCTAssertTrue(r.confirmed.isEmpty)
+        XCTAssertEqual(r.unconfirmed.count, 1)
+        XCTAssertFalse(r.unverifiable)
+    }
+
+    func testSubmittedCopyRenewedNextToAlreadyLaterCopy() {
+        // Wie oben, aber A wurde tatsächlich verlängert: 5 verschwindet, ein zweites 26 kommt hinzu
+        let before = [loan("A", due: 5, cb: "c0"), loan("A", due: 26, cb: "c1")]
+        let after  = [loan("A", due: 26, cb: "c0"), loan("A", due: 26, cb: "c1")]
+        let r = RenewalVerifier.verify(submitted: [row("A", cb: "c0")], before: before, after: after)
+        XCTAssertEqual(r.confirmed.count, 1)
+        XCTAssertTrue(r.unconfirmed.isEmpty)
+    }
+
+    func testUnrelatedCopyChangeDoesNotConfirmSubmitted() {
+        // Nicht eingereichtes Exemplar B ändert sich (z.B. Rückgabe/Neuausleihe), A bleibt gleich
+        let before = [loan("A", due: 5, cb: "c0"), loan("A", due: 9, cb: "c1")]
+        let after  = [loan("A", due: 5, cb: "c0"), loan("A", due: 30, cb: "c1")]
+        let r = RenewalVerifier.verify(submitted: [row("A", cb: "c0")], before: before, after: after)
+        XCTAssertTrue(r.confirmed.isEmpty, "As Datum 5 ist noch da – keine Verlängerung von A")
+    }
+
+    func testUnknownCheckboxIsUnconfirmed() {
+        let before = [loan("A", due: 5, cb: "c0")]
+        let r = RenewalVerifier.verify(submitted: [row("Z", cb: "c9")], before: before, after: before)
+        XCTAssertEqual(r.unconfirmed.count, 1)
+        XCTAssertTrue(r.confirmed.isEmpty)
+    }
+
     func testOutcomeMessages() {
         let a = row("A", cb: "c0"), b = row("B", cb: "c1")
         XCTAssertTrue(RenewalOutcome(renewed: [a]).userMessage.hasPrefix("1 Medium verlängert."))

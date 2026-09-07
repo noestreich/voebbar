@@ -103,6 +103,13 @@ final class HiddenInputTests: XCTestCase {
         XCTAssertEqual(HTMLParser.extractHiddenInputs(Fixture.loans)["requestCount"], "6")
     }
 
+    func testRequestCountIsRequiredForFollowUpRequests() throws {
+        XCTAssertEqual(try VOEBBSession.requiredRequestCount(in: HTMLParser.extractHiddenInputs(Fixture.overview)), "5")
+        XCTAssertThrowsError(try VOEBBSession.requiredRequestCount(in: HTMLParser.extractHiddenInputs(Fixture.unexpectedPage)))
+        XCTAssertThrowsError(try VOEBBSession.requiredRequestCount(in: ["requestCount": "abc"]))
+        XCTAssertThrowsError(try VOEBBSession.requiredRequestCount(in: ["requestCount": ""]))
+    }
+
     func testIdentityTokenPresent() {
         XCTAssertEqual(HTMLParser.extractHiddenInputs(Fixture.overview)["identity"], "IDENTITY_REDACTED")
         XCTAssertNil(HTMLParser.extractHiddenInputs(Fixture.unexpectedPage)["requestCount"])
