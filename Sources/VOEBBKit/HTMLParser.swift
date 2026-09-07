@@ -239,6 +239,35 @@ enum HTMLParser {
         return result
     }
 
+    // MARK: - Buttons / Seitenerkennung
+
+    /// Name des ersten Submit-Buttons, dessen Beschriftung (`value`) `label` enthält,
+    /// z.B. "Zur Übersicht" → "$Button$3". aDIS nummeriert Buttons nach Position und die
+    /// Position variiert je Seite (Ausleihen: $Button$3/7, Bereitstellungen: $Button$1/3) —
+    /// deshalb zur Laufzeit über die Beschriftung suchen, nie per fester Nummer.
+    static func findSubmitButton(labelContaining label: String, in html: String) -> String? {
+        let pattern = try! NSRegularExpression(
+            pattern: #"<input[^>]+type=['"]submit['"][^>]*>"#,
+            options: .caseInsensitive
+        )
+        for match in pattern.matches(in: html, range: NSRange(html.startIndex..., in: html)) {
+            guard let range = Range(match.range, in: html) else { continue }
+            let tag = String(html[range])
+            guard let value = extractAttr(tag, attr: "value"), value.contains(label),
+                  let name = extractAttr(tag, attr: "name") else { continue }
+            return name
+        }
+        return nil
+    }
+
+    /// Kontoübersicht: <title> "Mein Konto - …" (die Listen heißen "Meine Ausleihen") und ein
+    /// erkennbarer Servicebereich. Wird nach dem "Zur Übersicht"-Rücksprung geprüft, bevor
+    /// von der Seite aus weiter navigiert wird.
+    static func isOverviewPage(_ html: String) -> Bool {
+        guard html.range(of: #"<title>\s*Mein Konto\b"#, options: .regularExpression) != nil else { return false }
+        return parseLoanCount(html) != nil || parsePickupCount(html) != nil
+    }
+
     private static func extractAttr(_ tag: String, attr: String) -> String? {
         let pattern = "\(attr)=['\"]([^'\"]*)['\"]"
         guard let m = tag.range(of: pattern, options: [.regularExpression, .caseInsensitive]) else { return nil }

@@ -116,6 +116,32 @@ final class HiddenInputTests: XCTestCase {
     }
 }
 
+final class NavigationButtonTests: XCTestCase {
+    func testBackToOverviewButtonIsFoundByLabel() {
+        // Die Buttonnummer variiert je Seite — deshalb nie per Nummer, sondern per Beschriftung
+        XCTAssertEqual(HTMLParser.findSubmitButton(labelContaining: "Zur Übersicht", in: Fixture.loans), "$Button$3")
+        XCTAssertEqual(HTMLParser.findSubmitButton(labelContaining: "Zur Übersicht", in: Fixture.html("pickups")), "$Button$1")
+        XCTAssertNil(HTMLParser.findSubmitButton(labelContaining: "Zur Übersicht", in: Fixture.overview))
+        XCTAssertNil(HTMLParser.findSubmitButton(labelContaining: "Zur Übersicht", in: Fixture.unexpectedPage))
+    }
+
+    func testRenewalButtonMapping() {
+        // Dokumentiert die Zuordnung, die renewLoans/probeRenewability per Nummer verwenden
+        XCTAssertEqual(HTMLParser.findSubmitButton(labelContaining: "Alle verlängern", in: Fixture.loans), "$Button$0")
+        XCTAssertEqual(HTMLParser.findSubmitButton(labelContaining: "Markierte Medien verlängern", in: Fixture.loans), "$Button$1")
+        XCTAssertEqual(HTMLParser.findSubmitButton(labelContaining: "verlängerbar?", in: Fixture.loans), "$Button$2")
+    }
+
+    func testOverviewPageDetection() {
+        XCTAssertTrue(HTMLParser.isOverviewPage(Fixture.overview))
+        XCTAssertTrue(HTMLParser.isOverviewPage(Fixture.html("overview-with-pickup")))
+        // Die Listen teilen sich den <title> "Meine Ausleihen" und dürfen nie als Übersicht durchgehen
+        XCTAssertFalse(HTMLParser.isOverviewPage(Fixture.loans))
+        XCTAssertFalse(HTMLParser.isOverviewPage(Fixture.html("pickups")))
+        XCTAssertFalse(HTMLParser.isOverviewPage(Fixture.unexpectedPage))
+    }
+}
+
 final class PickupParserTests: XCTestCase {
     func testPickupCountFromServices() {
         XCTAssertEqual(HTMLParser.parsePickupCount(Fixture.overview), 0, "„Keine Bereitstellungen“")

@@ -48,58 +48,112 @@ public final class VOEBBSession {
         data.cardExpiryWarning = HTMLParser.parseAccountInfo(overviewHTML, term: "Achtung")
 
         let loanCount = HTMLParser.parseLoanCount(overviewHTML)
+        let pickupCount = HTMLParser.parsePickupCount(overviewHTML)
 
-        // loanCount == 0  → definitiv keine Ausleihen, fertig
+        // Alles läuft in DIESER Session: Übersicht → *SZA → Verlängerbarkeits-Probe →
+        // "Zur Übersicht" → *SZS → *SE (live verifiziert). Jede Seite liefert ein neues,
+        // einmalig gültiges identity-Token, deshalb muss der jeweils nächste Request immer
+        // von der zuletzt geladenen Seite ausgehen.
+        var currentHTML = overviewHTML
+
+        // loanCount == 0  → definitiv keine Ausleihen
         // loanCount > 0   → Ausleihen vorhanden, Seite abrufen
         // loanCount == nil → Erkennung unsicher, Ausleihen trotzdem probieren
         if loanCount != 0 {
-            let (loansHTML, _) = try await navigate(appURL: appURL, fromHTML: overviewHTML, navCode: "*SZA")
+            let (loansHTML, loansURL) = try await navigate(appURL: appURL, fromHTML: overviewHTML, navCode: "*SZA")
+            currentHTML = loansHTML
             var parsed = HTMLParser.parseLoans(loansHTML)
-            await logout(appURL: appURL, fromHTML: loansHTML)
             // Ein Parserfehler darf nicht wie ein leeres Konto aussehen.
-            try Self.validateLoans(parsed, expectedCount: loanCount, pageHTML: loansHTML)
+            do {
+                try Self.validateLoans(parsed, expectedCount: loanCount, pageHTML: loansHTML)
+            } catch {
+                await logout(appURL: appURL, fromHTML: loansHTML)
+                throw error
+            }
 
             if !parsed.isEmpty {
-                // Verlängerbarkeit in einer EIGENEN Session proben (frische Cookies,
-                // kein Einfluss auf diese Session). Fehlertolerant: ohne Probe bleiben
-                // die Felder einfach nil. Checkbox-Werte sind positionsbasiert und
-                // damit zwischen den Sekunden auseinanderliegenden Sessions stabil.
+                // Verlängerbarkeit per "Markierte Medien verlängerbar?" (read-only) proben.
+                // Fehlertolerant: schlägt die Probe hier fehl, wird sie einmal in einer frischen
+                // Session wiederholt (der bisherige Weg); bleibt auch die aus, bleiben die
+                // Verlängerbarkeits-Felder einfach nil.
+                var rows: [RenewabilityRow] = []
+                let checkboxes = parsed.map(\.checkboxValue).filter { !$0.isEmpty }
                 do {
-                    let probeSession = VOEBBSession(account: account)
-                    let rows = try await probeSession.fetchRenewabilityRows(password: password)
-                    if !rows.isEmpty {
-                        let byCheckbox = Dictionary(rows.map { ($0.checkboxValue, $0) },
-                                                    uniquingKeysWith: { first, _ in first })
-                        for i in parsed.indices {
-                            if let s = byCheckbox[parsed[i].checkboxValue] {
-                                parsed[i].isRenewable = s.renewable
-                                parsed[i].renewalReason = s.reason
-                            }
+                    let probe = try await probeRenewability(
+                        appURL: appURL, fromHTML: loansHTML, referer: loansURL,
+                        checkboxValues: checkboxes
+                    )
+                    currentHTML = probe.html
+                    rows = probe.rows
+                } catch {
+                    // Session-Zustand jetzt unsicher — der Rücksprung unten fängt das ab.
+                }
+                if rows.isEmpty {
+                    rows = (try? await VOEBBSession(account: account).fetchRenewabilityRows(password: password)) ?? []
+                }
+                if !rows.isEmpty {
+                    let byCheckbox = Dictionary(rows.map { ($0.checkboxValue, $0) },
+                                                uniquingKeysWith: { first, _ in first })
+                    for i in parsed.indices {
+                        if let s = byCheckbox[parsed[i].checkboxValue] {
+                            parsed[i].isRenewable = s.renewable
+                            parsed[i].renewalReason = s.reason
                         }
                     }
-                } catch {
-                    // Probe fehlgeschlagen → Ausleihen ohne Verlängerbarkeits-Info anzeigen
                 }
                 data.loans = parsed
             }
-        } else {
-            await logout(appURL: appURL, fromHTML: overviewHTML)
         }
 
-        // Bereitstellungen (abholbereite Bestellungen): nur wenn die Übersicht welche meldet,
-        // und in einer eigenen Session — aDIS ignoriert eine Listen-Navigation, die von einer anderen Listenseite aus gesendet wird
-        // (nach *SZA liefert *SZS still wieder die Ausleihen und umgekehrt). Fehlertolerant.
-        if let pickupCount = HTMLParser.parsePickupCount(overviewHTML), pickupCount > 0 {
-            if let pickups = try? await VOEBBSession(account: account).fetchPickups(password: password) {
+        // Bereitstellungen (abholbereite Bestellungen): nur wenn die Übersicht welche meldet.
+        // Eine Listen-Navigation direkt von einer Listenseite ignoriert aDIS (nach *SZA liefert
+        // *SZS still wieder die Ausleihen) — über den "Zur Übersicht"-Button dazwischen klappt
+        // sie. Fehlertolerant, Fallback ist der bisherige Weg in einer frischen Session.
+        if let pickupCount, pickupCount > 0 {
+            var pickups: [PickupItem]?
+            do {
+                let overviewAgain = try await returnToOverview(appURL: appURL, fromHTML: currentHTML)
+                let (html, _) = try await navigate(appURL: appURL, fromHTML: overviewAgain, navCode: "*SZS")
+                currentHTML = html
+                if HTMLParser.isPickupsPage(html) {
+                    pickups = HTMLParser.parsePickups(html)
+                }
+            } catch {
+                // Rücksprung oder Navigation fehlgeschlagen → frische Session unten
+            }
+            if pickups == nil {
+                pickups = try? await VOEBBSession(account: account).fetchPickups(password: password)
+            }
+            if let pickups {
                 data.pickups = pickups
             }
         }
 
+        await logout(appURL: appURL, fromHTML: currentHTML)
         data.lastUpdated = Date()
         return data
     }
 
-    /// Frische Session: Login → Bereitstellungen (*SZS) → Logout.
+    /// Zurück zur Kontoübersicht über den "Zur Übersicht"-Button der aktuellen Seite (per
+    /// Beschriftung gesucht, die Buttonnummer variiert je Seite). Ist die aktuelle Seite schon
+    /// die Übersicht, wird sie unverändert zurückgegeben. Wirft, wenn kein Button gefunden
+    /// wird oder die Antwort keine Übersicht ist — der Aufrufer fällt dann auf eine frische
+    /// Session zurück.
+    private func returnToOverview(appURL: String, fromHTML: String) async throws -> String {
+        if HTMLParser.isOverviewPage(fromHTML) { return fromHTML }
+        guard let button = HTMLParser.findSubmitButton(labelContaining: "Zur Übersicht", in: fromHTML) else {
+            throw VOEBBError.parseError("„Zur Übersicht“-Button nicht gefunden")
+        }
+        let html = try await pressButton(appURL: appURL, fromHTML: fromHTML, referer: appURL,
+                                         buttonField: button, focusID: "", checkboxValues: [])
+        guard HTMLParser.isOverviewPage(html) else {
+            throw VOEBBError.parseError("Rücksprung lieferte keine Kontoübersicht")
+        }
+        return html
+    }
+
+    /// Fallback in einer frischen Session: Login → Bereitstellungen (*SZS) → Logout.
+    /// Regulär holt fetchAccountData die Bereitstellungen in derselben Session per Rücksprung.
     private func fetchPickups(password: String) async throws -> [PickupItem] {
         let (appURL, overviewHTML) = try await login(password: password)
         let (html, _) = try await navigate(appURL: appURL, fromHTML: overviewHTML, navCode: "*SZS")
@@ -110,9 +164,9 @@ public final class VOEBBSession {
         return HTMLParser.parsePickups(html)
     }
 
-    /// Läuft in einer frischen Session: Login → Ausleihen → "Markierte Medien
-    /// verlängerbar?"-Probe. Wird von fetchAccountData auf einer zweiten
-    /// VOEBBSession-Instanz aufgerufen.
+    /// Fallback in einer frischen Session: Login → Ausleihen → "Markierte Medien
+    /// verlängerbar?"-Probe. Regulär probt fetchAccountData in derselben Session; dieser Weg
+    /// läuft nur, wenn die Probe dort unlesbar war oder fehlschlug.
     private func fetchRenewabilityRows(password: String) async throws -> [RenewabilityRow] {
         let (appURL, overviewHTML) = try await login(password: password)
         let (loansHTML, loansURL) = try await navigate(appURL: appURL, fromHTML: overviewHTML, navCode: "*SZA")
@@ -248,7 +302,7 @@ public final class VOEBBSession {
         }
 
         // Step 2: renew only the confirmed-renewable candidates ($Button$1).
-        let resultHTML = try await pressRenewalButton(
+        let resultHTML = try await pressButton(
             appURL: appURL, fromHTML: probe.html, referer: appURL,
             buttonField: "$Button$1", focusID: "$$GFBO_4",
             checkboxValues: renewable.map(\.checkboxValue)
@@ -277,7 +331,7 @@ public final class VOEBBSession {
         appURL: String, fromHTML: String, referer: String,
         checkboxValues: [String]
     ) async throws -> (html: String, rows: [RenewabilityRow]) {
-        let html = try await pressRenewalButton(
+        let html = try await pressButton(
             appURL: appURL, fromHTML: fromHTML, referer: referer,
             buttonField: "$Button$2", focusID: "$$GFBO_7",
             checkboxValues: checkboxValues
@@ -285,10 +339,11 @@ public final class VOEBBSession {
         return (html, HTMLParser.parseRenewability(html))
     }
 
-    /// Presses one of the renewal-page buttons by re-POSTing the page's hidden fields plus the
-    /// selected checkboxes. aDISWeb expects duplicate `$RTable_checkbox[]` keys, so the body is
-    /// encoded manually (URLSession can't send duplicate keys via a dictionary).
-    private func pressRenewalButton(
+    /// Presses a `$Button$N` submit button by re-POSTing the page's hidden fields plus the
+    /// selected checkboxes (empty for plain navigation buttons like "Zur Übersicht"; `focusID`
+    /// may be empty — live-verified). aDISWeb expects duplicate `$RTable_checkbox[]` keys, so
+    /// the body is encoded manually (URLSession can't send duplicate keys via a dictionary).
+    private func pressButton(
         appURL: String, fromHTML: String, referer: String,
         buttonField: String, focusID: String,
         checkboxValues: [String]
