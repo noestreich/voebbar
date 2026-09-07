@@ -177,6 +177,10 @@ struct ContentView: View {
                     Label(warning, systemImage: "exclamationmark.triangle")
                         .foregroundStyle(.orange)
                 }
+                // Abholbereite Bestellungen — ausgegraut, ohne Ampel, keine Aktion
+                ForEach(data.pickups, id: \.id) { pickup in
+                    PickupRow(pickup: pickup)
+                }
                 if let error = data.error {
                     Label(data.loans.isEmpty ? error : "\(error) — angezeigt wird der letzte bekannte Stand",
                           systemImage: "exclamationmark.triangle")
@@ -277,6 +281,46 @@ struct ContentView: View {
         if data.loans.contains(where: { $0.isOverdue || $0.daysUntilDue < 7 }) { return .red }
         if data.loans.contains(where: { $0.daysUntilDue <= 14 }) { return .orange }
         return .green
+    }
+}
+
+/// Zeile für eine Bereitstellung: gedämpft, ohne Ampelpunkt, mit Abholfrist statt Autor.
+struct PickupRow: View {
+    let pickup: PickupItem
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            Image(systemName: "tray.and.arrow.down")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(width: 10)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(pickup.title.components(separatedBy: " / ").first ?? pickup.title)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                Text(pickup.readyUntilString.isEmpty
+                     ? "Bereitstellung – abholbereit"
+                     : "Bereitstellung – abholbereit bis \(pickup.readyUntilString)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                Text(shortLibrary)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
+            }
+            Spacer(minLength: 12)
+        }
+        .padding(.vertical, 4)
+    }
+
+    private var shortLibrary: String {
+        if let colon = pickup.library.lastIndex(of: ":") {
+            return String(pickup.library[pickup.library.index(after: colon)...])
+                .trimmingCharacters(in: .whitespaces)
+        }
+        return pickup.library
     }
 }
 

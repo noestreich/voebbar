@@ -257,6 +257,14 @@ final class StatusBarController: NSObject {
             )
         }
 
+        // Abholbereite Bestellungen ("Bereitstellungen") — reine Info
+        for pickup in data.pickups {
+            let title = truncate(pickup.title.components(separatedBy: " / ").first ?? pickup.title, to: Self.maxTitleLength)
+            let until = pickup.readyUntilString.isEmpty ? "" : " (bis \(pickup.readyUntilString))"
+            let item = add(to: menu, title: "  ⤓  Abholbereit\(until): \(title)", enabled: false)
+            item.toolTip = "\(pickup.title)\nAbholbereit bis \(pickup.readyUntilString)\n\(pickup.library)"
+        }
+
         if let error = data.error {
             let item = add(to: menu, title: "  ⚠️  \(truncate(error, to: 60))", enabled: false)
             item.toolTip = data.loans.isEmpty ? error : "\(error)\nAngezeigt wird der letzte bekannte Stand."

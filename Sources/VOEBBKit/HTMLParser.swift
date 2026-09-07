@@ -108,6 +108,58 @@ enum HTMLParser {
         return Double(text[m].replacingOccurrences(of: ",", with: "."))
     }
 
+    // MARK: - Pickups ("Bereitstellungen")
+
+    /// Zahl der Bereitstellungen aus dem Servicebereich der Kontoübersicht:
+    /// "Keine Bereitstellungen" → 0, "1 Bereitstellung" / "2 Bereitstellungen" → n, unbekannt → nil.
+    static func parsePickupCount(_ html: String) -> Int? {
+        let servicesHTML = extractKontoServices(html) ?? html
+        if servicesHTML.contains("Keine Bereitstellungen") { return 0 }
+        if let m = servicesHTML.range(of: #"(\d+)\s+Bereitstellung"#, options: .regularExpression),
+           let numStr = String(servicesHTML[m]).split(separator: " ").first,
+           let n = Int(numStr) {
+            return n
+        }
+        return nil
+    }
+
+    /// Erkennt die Bereitstellungs-Liste (aDIS nutzt denselben <title> wie für Ausleihen,
+    /// unterscheidbar nur über die Seitenüberschrift).
+    static func isPickupsPage(_ html: String) -> Bool {
+        html.contains("Mein Konto - Bereitstellungen")
+    }
+
+    /// Zeilen der Bereitstellungs-Liste, positionsbasiert wie bei Ausleihen:
+    /// [0]=Checkbox, [1]=Abholfrist ("Bis"), [2]=Ausgabeort, [3]=Titel (+ Signatur/Mediennummer per <br>).
+    /// Liefert [] für jede Seite, die nicht als Bereitstellungs-Liste erkennbar ist.
+    static func parsePickups(_ html: String) -> [PickupItem] {
+        guard isPickupsPage(html) else { return [] }
+        let formatter = DateFormatter()
+        formatter.dateFormat = "dd.MM.yyyy"
+        formatter.locale = Locale(identifier: "de_DE")
+
+        let trPattern = try! NSRegularExpression(
+            pattern: #"<tr[^>]*class="[^"]*rTable_tr[^"]*"[^>]*>(.*?)</tr>"#,
+            options: [.dotMatchesLineSeparators, .caseInsensitive]
+        )
+        var items: [PickupItem] = []
+        for match in trPattern.matches(in: html, range: NSRange(html.startIndex..., in: html)) {
+            guard let rowRange = Range(match.range(at: 1), in: html) else { continue }
+            let cols = extractAllTDContents(String(html[rowRange]))
+            guard cols.count >= 4 else { continue }
+            let dateStr = stripHTML(cols[1]).trimmingCharacters(in: .whitespaces)
+            let title = cleanTitleColumn(cols[3])
+            guard !title.isEmpty else { continue }
+            items.append(PickupItem(
+                title: title,
+                readyUntilString: dateStr,
+                readyUntil: formatter.date(from: dateStr),
+                library: stripHTML(cols[2]).trimmingCharacters(in: .whitespaces)
+            ))
+        }
+        return items
+    }
+
     // MARK: - Renewability Probe ("Markierte Medien verlängerbar?")
 
     /// Parses the response of the "Markierte Medien verlängerbar?" probe. Each loan row

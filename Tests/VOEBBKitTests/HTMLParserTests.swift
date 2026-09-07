@@ -115,3 +115,54 @@ final class HiddenInputTests: XCTestCase {
         XCTAssertNil(HTMLParser.extractHiddenInputs(Fixture.unexpectedPage)["requestCount"])
     }
 }
+
+final class PickupParserTests: XCTestCase {
+    func testPickupCountFromServices() {
+        XCTAssertEqual(HTMLParser.parsePickupCount(Fixture.overview), 0, "„Keine Bereitstellungen“")
+        XCTAssertEqual(HTMLParser.parsePickupCount(Fixture.html("overview-with-pickup")), 1, "„1 Bereitstellung“ (Singular)")
+        XCTAssertNil(HTMLParser.parsePickupCount(Fixture.unexpectedPage))
+    }
+
+    func testParsesPickupRows() {
+        let html = Fixture.html("pickups")
+        XCTAssertTrue(HTMLParser.isPickupsPage(html))
+        let items = HTMLParser.parsePickups(html)
+        XCTAssertEqual(items.count, 1)
+        let item = items[0]
+        XCTAssertEqual(item.readyUntilString, "19.09.2026")
+        XCTAssertNotNil(item.readyUntil)
+        XCTAssertEqual(item.library, "Friedrichshain-Kreuzberg: Bezirkszentralbibliothek Pablo Neruda")
+        XCTAssertEqual(item.title, "W1 W2. - W3 1. W4 W5 W6 W7 W8 / X", "Erste Titelzeile, ¬-Marker entfernt, Signatur/Mediennummer weg")
+    }
+
+    func testLoansPageIsNotMistakenForPickups() {
+        // Die Ausleihseite hat dieselbe <title>; ohne Seitenmarker darf nichts geparst werden
+        XCTAssertFalse(HTMLParser.isPickupsPage(Fixture.loans))
+        XCTAssertEqual(HTMLParser.parsePickups(Fixture.loans).count, 0)
+        XCTAssertEqual(HTMLParser.parsePickups(Fixture.unexpectedPage).count, 0)
+    }
+}
+
+final class AccountDataCacheTests: XCTestCase {
+    func testDecodesCacheFromOlderVersionWithoutNewFields() throws {
+        // Cache-Format vor pickups/feesUnknown/pickupCode/cardExpiryWarning
+        let json = """
+        [{"account":{"name":"Test","cardNumber":"1"},"loans":[],"fees":0.4,
+          "cardValidUntil":"12.08.2027","lastUpdated":0}]
+        """.data(using: .utf8)!
+        let decoded = try JSONDecoder().decode([AccountData].self, from: json)
+        XCTAssertEqual(decoded.count, 1)
+        XCTAssertEqual(decoded[0].fees, 0.4)
+        XCTAssertEqual(decoded[0].pickups, [])
+        XCTAssertNil(decoded[0].pickupCode)
+    }
+
+    func testRoundTrip() throws {
+        var data = AccountData(account: LibraryAccount(name: "A", cardNumber: "2"))
+        data.pickups = [PickupItem(title: "T", readyUntilString: "19.09.2026", readyUntil: nil, library: "L")]
+        data.cardExpiryWarning = "Ausweis läuft in 3 Tagen ab"
+        let back = try JSONDecoder().decode(AccountData.self, from: JSONEncoder().encode(data))
+        XCTAssertEqual(back.pickups, data.pickups)
+        XCTAssertEqual(back.cardExpiryWarning, data.cardExpiryWarning)
+    }
+}

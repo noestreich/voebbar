@@ -128,16 +128,36 @@ public struct RenewalOutcome {
     }
 }
 
+/// Ein bestelltes/vorgemerktes Medium, das zur Abholung bereitliegt ("Bereitstellung").
+public struct PickupItem: Codable, Equatable {
+    public let title: String
+    /// Abholfrist, wie angezeigt (z.B. "19.09.2026").
+    public let readyUntilString: String
+    public let readyUntil: Date?
+    /// Ausgabeort (Bibliothek).
+    public let library: String
+
+    public init(title: String, readyUntilString: String, readyUntil: Date?, library: String) {
+        self.title = title
+        self.readyUntilString = readyUntilString
+        self.readyUntil = readyUntil
+        self.library = library
+    }
+
+    public var id: String { "\(title)|\(readyUntilString)|\(library)" }
+}
+
 public struct AccountData: Codable {
     public let account: LibraryAccount
     public var loans: [Loan] = []
+    /// Abholbereite Bestellungen ("Bereitstellungen").
+    public var pickups: [PickupItem] = []
     public var fees: Double = 0
     public var cardValidUntil: String = ""
     public var lastUpdated: Date = Date()
     public var error: String?
     /// true, wenn die Gebührenseite nicht abrufbar/erkennbar war — dann ist `fees`
     /// nicht aussagekräftig und sollte nicht als "0" angezeigt werden.
-    /// (Optional, damit gecachte Daten älterer App-Versionen dekodierbar bleiben.)
     public var feesUnknown: Bool? = nil
     /// Abholcode für bereitgestellte Medien (z.B. "35 Da"), von der Kontoübersicht.
     public var pickupCode: String? = nil
@@ -147,6 +167,27 @@ public struct AccountData: Codable {
 
     public init(account: LibraryAccount) {
         self.account = account
+    }
+
+    // Tolerantes Decoding: Felder, die es in gecachten Daten älterer App-Versionen
+    // noch nicht gab, fallen auf ihre Defaults zurück statt den Cache zu verwerfen.
+    private enum CodingKeys: String, CodingKey {
+        case account, loans, pickups, fees, cardValidUntil, lastUpdated, error,
+             feesUnknown, pickupCode, cardExpiryWarning
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        account = try c.decode(LibraryAccount.self, forKey: .account)
+        loans = try c.decodeIfPresent([Loan].self, forKey: .loans) ?? []
+        pickups = try c.decodeIfPresent([PickupItem].self, forKey: .pickups) ?? []
+        fees = try c.decodeIfPresent(Double.self, forKey: .fees) ?? 0
+        cardValidUntil = try c.decodeIfPresent(String.self, forKey: .cardValidUntil) ?? ""
+        lastUpdated = try c.decodeIfPresent(Date.self, forKey: .lastUpdated) ?? Date()
+        error = try c.decodeIfPresent(String.self, forKey: .error)
+        feesUnknown = try c.decodeIfPresent(Bool.self, forKey: .feesUnknown)
+        pickupCode = try c.decodeIfPresent(String.self, forKey: .pickupCode)
+        cardExpiryWarning = try c.decodeIfPresent(String.self, forKey: .cardExpiryWarning)
     }
 
     public var nextDueDateString: String? { loans.min(by: { $0.dueDate < $1.dueDate })?.dueDateString }

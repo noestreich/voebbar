@@ -34,8 +34,8 @@ def body(entry):
 
 
 def find_pages(entries):
-    """Kontoübersicht + Ausleihseite anhand des <title> finden; Zugangsdaten aus dem Login-POST."""
-    overview = loans = None
+    """Kontoübersicht, Ausleih- und Bereitstellungsseite finden; Zugangsdaten aus dem Login-POST."""
+    overview = loans = pickups = None
     card = None
     for e in entries:
         req = e["request"]
@@ -46,13 +46,17 @@ def find_pages(entries):
         if "<title>" not in html:
             continue
         title = re.search(r"<title>(.*?)</title>", html, re.DOTALL).group(1)
+        h1 = re.search(r"<h1[^>]*>(.*?)</h1>", html, re.DOTALL)
+        h1 = re.sub(r"<[^>]+>", "", h1.group(1)) if h1 else ""
         if "Mein Konto" in title and overview is None:
             overview = html
+        elif "Bereitstellungen" in h1 and pickups is None:
+            pickups = html
         elif "Meine Ausleihen" in title and loans is None:
             loans = html
-    if not (overview and loans):
-        sys.exit("HAR enthält keine vollständige Übersicht/Ausleihseite (Netzwerk-Filter 'Alle' nutzen!)")
-    return overview, loans, card
+    if not overview:
+        sys.exit("HAR enthält keine Kontoübersicht (Netzwerk-Filter 'Alle' nutzen!)")
+    return overview, loans, pickups, card
 
 
 class WordMapper:
@@ -82,9 +86,9 @@ def anonymize(html, name_variants, card, mapper):
     def anon_row(m):
         row = m.group(0)
         tds = list(re.finditer(r"(<td[^>]*>)(.*?)(</td>)", row, re.DOTALL))
-        if len(tds) < 5:
+        if len(tds) < 4:
             return row
-        title_td = tds[3]
+        title_td = tds[3]  # Ausleihen: [chk, date, lib, title, status]; Bereitstellungen: [chk, bis, ort, title]
         inner = title_td.group(2)
         # Mediennummer (letzte Zeile, 11 Ziffern) durch Zähler ersetzen, Rest wortweise
         inner = re.sub(r"\b\d{11}\b", lambda _: f"{anon_row.counter:011d}", inner)
@@ -108,10 +112,14 @@ def anonymize(html, name_variants, card, mapper):
 
 
 def main():
-    if len(sys.argv) != 2:
+    args = sys.argv[1:]
+    overview_name = "overview"
+    if "--overview-name" in args:  # z.B. eine zweite Übersicht mit Bereitstellungen ablegen
+        i = args.index("--overview-name"); overview_name = args[i + 1]; del args[i:i + 2]
+    if len(args) != 1:
         sys.exit(__doc__)
-    entries = load_entries(sys.argv[1])
-    overview, loans, card = find_pages(entries)
+    entries = load_entries(args[0])
+    overview, loans, pickups, card = find_pages(entries)
 
     # Name aus "Hallo Vorname Nachname" der Übersicht ableiten
     m = re.search(r"Hallo\s+([A-ZÄÖÜ][^\s<]+)\s+([A-ZÄÖÜ][^\s<]+)", overview)
@@ -122,11 +130,14 @@ def main():
 
     mapper = WordMapper()
     OUT_DIR.mkdir(exist_ok=True)
-    for filename, html in [("overview.html", overview), ("loans.html", loans)]:
+    pages = [(f"{overview_name}.html", overview), ("loans.html", loans), ("pickups.html", pickups)]
+    for filename, html in pages:
+        if html is None:
+            continue
         out = anonymize(html, name_variants, card, mapper)
-        # Leak-Check
+        # Leak-Check auf Wortgrenzen (Vornamen können in Ortsnamen stecken, z.B. "Hellersdorf")
         for needle in [first, last, card or "§§"]:
-            if needle and needle in out:
+            if needle and re.search(r"(?<![^\W\d_])" + re.escape(needle) + r"(?![^\W\d_])", out):
                 sys.exit(f"LEAK: '{needle}' noch in {filename}")
         (OUT_DIR / filename).write_text(out, encoding="utf-8")
         print(f"{filename}: {len(out)} Zeichen")

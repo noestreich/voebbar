@@ -86,8 +86,28 @@ public final class VOEBBSession {
             await logout(appURL: appURL, fromHTML: overviewHTML)
         }
 
+        // Bereitstellungen (abholbereite Bestellungen): nur wenn die Übersicht welche meldet,
+        // und in einer eigenen Session — aDIS akzeptiert pro Session nur EINE Listen-Navigation
+        // (nach *SZA liefert *SZS still wieder die Ausleihen und umgekehrt). Fehlertolerant.
+        if let pickupCount = HTMLParser.parsePickupCount(overviewHTML), pickupCount > 0 {
+            if let pickups = try? await VOEBBSession(account: account).fetchPickups(password: password) {
+                data.pickups = pickups
+            }
+        }
+
         data.lastUpdated = Date()
         return data
+    }
+
+    /// Frische Session: Login → Bereitstellungen (*SZS) → Logout.
+    private func fetchPickups(password: String) async throws -> [PickupItem] {
+        let (appURL, overviewHTML) = try await login(password: password)
+        let (html, _) = try await navigate(appURL: appURL, fromHTML: overviewHTML, navCode: "*SZS")
+        await logout(appURL: appURL, fromHTML: html)
+        guard HTMLParser.isPickupsPage(html) else {
+            throw VOEBBError.parseError("Bereitstellungs-Seite nicht erkannt")
+        }
+        return HTMLParser.parsePickups(html)
     }
 
     /// Läuft in einer frischen Session: Login → Ausleihen → "Markierte Medien
