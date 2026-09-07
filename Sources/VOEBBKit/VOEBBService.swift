@@ -87,7 +87,7 @@ public final class VOEBBSession {
         }
 
         // Bereitstellungen (abholbereite Bestellungen): nur wenn die Übersicht welche meldet,
-        // und in einer eigenen Session — aDIS akzeptiert pro Session nur EINE Listen-Navigation
+        // und in einer eigenen Session — aDIS ignoriert eine Listen-Navigation, die von einer anderen Listenseite aus gesendet wird
         // (nach *SZA liefert *SZS still wieder die Ausleihen und umgekehrt). Fehlertolerant.
         if let pickupCount = HTMLParser.parsePickupCount(overviewHTML), pickupCount > 0 {
             if let pickups = try? await VOEBBSession(account: account).fetchPickups(password: password) {
