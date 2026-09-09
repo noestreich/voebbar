@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Loan/due-date info from VÖBB (Verbund der Öffentlichen Bibliotheken Berlins) for one or more library cards, as two apps sharing one core:
 
 - **macOS menu bar app** (`Sources/VOEBBMenu`) — pure AppKit, no SwiftUI, built via Swift Package Manager. Runs as an accessory app (`LSUIElement`, no Dock icon).
-- **iOS app** (`iOS/VOEBBApp.xcodeproj` + `iOS/VOEBBApp/`) — SwiftUI, iOS 16+, draft stage.
+- **iOS + macOS app** (`iOS/VOEBBApp.xcodeproj` + `iOS/VOEBBApp/`) — one SwiftUI target with two destinations (iOS 16+, macOS 13+). Live in the App Store as "VÖPP". On macOS it is a normal windowed app plus a `MenuBarExtra` (`MenuBarView.swift`), sandboxed with the network-client entitlement (`VOEBBApp.entitlements`, applied via `CODE_SIGN_ENTITLEMENTS[sdk=macosx*]`). Platform differences are isolated in `PlatformShims.swift` (no-op modifiers on the other platform, `leadingAction`/`trailingAction` toolbar placements, `SheetHeader` for macOS sheets, which do not render toolbars) and a few `#if os(...)` blocks: the barcode scanner is iOS-only; macOS sheets carry their own Schließen/Abbrechen/Sichern buttons; the accounts sheet is a grouped `Form` on macOS because macOS `List` rows do not grow for multi-line footers. The macOS app icon set is derived from the root `AppIcon.icns` (`iconutil --convert iconset`).
 - **`VOEBBKit`** (`Sources/VOEBBKit`, library target) — the shared core both apps use: scraping client, HTML parser, models, account/keychain storage. All cross-app logic belongs here; its public API surface is deliberate (`public` types/members), so keep additions minimal.
 
 ## Build & run
@@ -29,7 +29,13 @@ iOS (requires the iOS platform installed in Xcode):
 xcodebuild -project iOS/VOEBBApp.xcodeproj -scheme VOEBBApp -destination 'generic/platform=iOS' build
 ```
 
-or open `iOS/VOEBBApp.xcodeproj` in Xcode and run on a device. The project references the root package via a local-package reference (`relativePath = ..`); signing is automatic with team `9H7F5NMT97`, bundle id `de.ncls.voebbar`.
+macOS (same project, same bundle id, universal purchase):
+
+```
+xcodebuild -project iOS/VOEBBApp.xcodeproj -scheme VOEBBApp -destination 'platform=macOS' build
+```
+
+or open `iOS/VOEBBApp.xcodeproj` in Xcode and run on a device or "My Mac". The project references the root package via a local-package reference (`relativePath = ..`); signing is automatic with team `9H7F5NMT97`, bundle id `de.ncls.voebbar`.
 
 `swift test` runs the `VOEBBKitTests` target (XCTest, `@testable import VOEBBKit`). Parser tests use anonymized real pages in `Tests/VOEBBKitTests/Fixtures/` (overview + loans list); regenerate them from a fresh HAR with `Tests/VOEBBKitTests/anonymize_fixtures.py` — never commit a raw HAR. The fixtures are frozen: they catch our regressions, not VÖBB markup changes.
 

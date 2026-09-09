@@ -1,10 +1,11 @@
 # Changelog
 
-Versionen von VÖPP (iOS) und VOEBBMenu (macOS). Beide Apps teilen sich `VOEBBKit`, Änderungen daran gelten für beide.
+Versionen von VÖPP (iOS und macOS, App Store) und VOEBBMenu (macOS-Menüleisten-App, Download). Alle teilen sich `VOEBBKit`, Änderungen daran gelten für alle.
 
 ## iOS 1.7 / macOS 1.3 — 2026-09-07
 
 ### Neu
+- **VÖPP für den Mac:** Dieselbe App läuft jetzt nativ auf macOS 13+ (Apple Silicon und Intel) — als Fenster-App mit zusätzlichem Menüleisten-Symbol, das die Resttage des dringlichsten Mediums zeigt und im Menü alle Konten, Bereitstellungen, Ausleihen und die Verlängern-Aktion anbietet. Universal Purchase mit der iOS-Version; die App aktualisiert sich auf dem Mac stündlich im Hintergrund. Der Barcode-Scanner bleibt iOS-exklusiv.
 - **Bereitstellungen:** Abholbereite Bestellungen erscheinen oben in der Liste des jeweiligen Kontos, ausgegraut und ohne Ampelpunkt, mit Ausgabeort und Abholfrist („abholbereit bis …“).
 
 ### Zuverlässigkeit

@@ -1,0 +1,3 @@
+/* Name im macOS-App-Menü und in Finder/Dock; die Binärdatei bleibt ASCII (VOEBBApp) */
+"CFBundleName" = "VÖPP";
+"CFBundleDisplayName" = "VÖPP";

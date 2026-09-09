@@ -53,9 +53,9 @@ struct ContentView: View {
                 }
             }
             .navigationTitle("VÖPP")
-            .navigationBarTitleDisplayMode(.inline)
+            .inlineNavigationTitle()
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
+                ToolbarItem(placement: .leadingAction) {
                     Button {
                         Task { await model.refresh() }
                     } label: {
@@ -67,7 +67,7 @@ struct ContentView: View {
                     }
                     .disabled(model.isLoading)
                 }
-                ToolbarItem(placement: .topBarTrailing) {
+                ToolbarItem(placement: .trailingAction) {
                     Button {
                         showAccounts = true
                     } label: {
@@ -80,8 +80,7 @@ struct ContentView: View {
             }
             .sheet(item: $selectedLoan) { selection in
                 LoanDetailView(loan: selection.loan, account: selection.account)
-                    .presentationDetents([.medium, .large])
-                    .presentationDragIndicator(.visible)
+                    .detailSheetPresentation()
             }
             .alert(item: $model.alert) { alert in
                 Alert(
@@ -222,6 +221,7 @@ struct ContentView: View {
                         }
                     }
                     .disabled(model.renewingCard != nil || model.renewingLoan != nil)
+                    .buttonStyle(.borderless)
                 }
             }
         } header: {
@@ -433,30 +433,55 @@ struct LoanDetailView: View {
                 .frame(maxWidth: .infinity, alignment: .topLeading)
             }
 
+            #if os(macOS)
+            HStack {
+                Button("Schließen") { dismiss() }
+                    .keyboardShortcut(.cancelAction)
+                Spacer()
+                if loan.isBlocked {
+                    blockedLabel
+                } else {
+                    renewButton
+                        .buttonStyle(.borderedProminent)
+                        .keyboardShortcut(.defaultAction)
+                }
+            }
+            .padding(24)
+            #else
             if loan.isBlocked {
-                // Eigene Optik statt Apples blassem Disabled-Stil, der auf dem
-                // weißen Sheet praktisch unsichtbar ist.
-                Label("Verlängerung derzeit nicht möglich", systemImage: "lock")
-                    .font(.body.weight(.medium))
-                    .foregroundStyle(.secondary)
+                blockedLabel
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 15)
-                    .background(Color(.secondarySystemFill), in: RoundedRectangle(cornerRadius: 14))
                     .padding(24)
             } else {
-                Button {
-                    dismiss()
-                    Task { await model.renew(loan: loan, for: account) }
-                } label: {
-                    Label("Dieses Medium verlängern", systemImage: "arrow.clockwise")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .disabled(model.renewingLoan != nil || model.renewingCard != nil)
-                .padding(24)
+                renewButton
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
+                    .padding(24)
             }
+            #endif
         }
+    }
+
+    /// Eigene Optik statt Apples blassem Disabled-Stil, der auf dem
+    /// weißen Sheet praktisch unsichtbar ist.
+    private var blockedLabel: some View {
+        Label("Verlängerung derzeit nicht möglich", systemImage: "lock")
+            .font(.body.weight(.medium))
+            .foregroundStyle(.secondary)
+            .padding(.vertical, 15)
+            .padding(.horizontal, 20)
+            .background(Color.secondary.opacity(0.15), in: RoundedRectangle(cornerRadius: 14))
+    }
+
+    private var renewButton: some View {
+        Button {
+            dismiss()
+            Task { await model.renew(loan: loan, for: account) }
+        } label: {
+            Label("Dieses Medium verlängern", systemImage: "arrow.clockwise")
+                .frame(maxWidth: .infinity)
+        }
+        .disabled(model.renewingLoan != nil || model.renewingCard != nil)
     }
 
     private var dueText: String {

@@ -26,6 +26,11 @@ final class AppModel: ObservableObject {
 
     init() {
         loadCache()
+        #if os(macOS)
+        // Auf dem Mac läuft die App auch ohne offenes Fenster (Menüleiste) weiter —
+        // deshalb hier stündlich aktualisieren, nicht nur bei Fenster-Aktivierung.
+        startPeriodicRefresh()
+        #endif
     }
 
     // MARK: - Cache (letzter Stand sofort anzeigen, dann im Hintergrund aktualisieren)
@@ -96,6 +101,17 @@ final class AppModel: ObservableObject {
         saveCache()
 
         await NotificationScheduler.reschedule(accountData: accountData, leadDays: NotificationScheduler.leadDays)
+    }
+
+    /// Prüft alle 15 Minuten und aktualisiert, sobald der Stand älter als eine Stunde ist.
+    private func startPeriodicRefresh() {
+        Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 15 * 60 * 1_000_000_000)
+                guard let self else { return }
+                await self.refreshIfStale(minutes: 55)
+            }
+        }
     }
 
     /// Aktualisiert nur, wenn der letzte Stand älter als `minutes` Minuten ist —

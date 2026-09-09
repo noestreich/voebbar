@@ -15,6 +15,9 @@
 		AA0000000000000000000106 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000206 /* Assets.xcassets */; };
 		AA0000000000000000000107 /* NotificationScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000207 /* NotificationScheduler.swift */; };
 		AA0000000000000000000108 /* BarcodeScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000208 /* BarcodeScannerView.swift */; };
+		AA0000000000000000000109 /* PlatformShims.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000209 /* PlatformShims.swift */; };
+		AA0000000000000000000110 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000210 /* MenuBarView.swift */; };
+		AA0000000000000000000111 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000212 /* InfoPlist.strings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,6 +29,11 @@
 		AA0000000000000000000206 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		AA0000000000000000000207 /* NotificationScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationScheduler.swift; sourceTree = "<group>"; };
 		AA0000000000000000000208 /* BarcodeScannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BarcodeScannerView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000209 /* PlatformShims.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformShims.swift; sourceTree = "<group>"; };
+		AA0000000000000000000210 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
+		AA0000000000000000000211 /* VOEBBApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = VOEBBApp.entitlements; sourceTree = "<group>"; };
+		AA0000000000000000000213 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		AA0000000000000000000214 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -57,7 +65,11 @@
 				AA0000000000000000000204 /* AccountsView.swift */,
 				AA0000000000000000000207 /* NotificationScheduler.swift */,
 				AA0000000000000000000208 /* BarcodeScannerView.swift */,
+				AA0000000000000000000209 /* PlatformShims.swift */,
+				AA0000000000000000000210 /* MenuBarView.swift */,
 				AA0000000000000000000206 /* Assets.xcassets */,
+				AA0000000000000000000211 /* VOEBBApp.entitlements */,
+				AA0000000000000000000212 /* InfoPlist.strings */,
 			);
 			path = VOEBBApp;
 			sourceTree = "<group>";
@@ -136,6 +148,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AA0000000000000000000106 /* Assets.xcassets in Resources */,
+				AA0000000000000000000111 /* InfoPlist.strings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -152,10 +165,24 @@
 				AA0000000000000000000104 /* AccountsView.swift in Sources */,
 				AA0000000000000000000107 /* NotificationScheduler.swift in Sources */,
 				AA0000000000000000000108 /* BarcodeScannerView.swift in Sources */,
+				AA0000000000000000000109 /* PlatformShims.swift in Sources */,
+				AA0000000000000000000110 /* MenuBarView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		AA0000000000000000000212 /* InfoPlist.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				AA0000000000000000000213 /* de */,
+				AA0000000000000000000214 /* en */,
+			);
+			name = InfoPlist.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		AA0000000000000000000701 /* Debug */ = {
@@ -175,6 +202,7 @@
 					"$(inherited)",
 				);
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -195,6 +223,7 @@
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
@@ -209,13 +238,16 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = VOEBBApp/VOEBBApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				ENABLE_HARDENED_RUNTIME = YES;
 				CURRENT_PROJECT_VERSION = 10;
 				DEVELOPMENT_TEAM = 9H7F5NMT97;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = VOEBBApp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "VÖPP";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Die Kamera wird zum Scannen des Barcodes auf dem Bibliotheksausweis verwendet.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -231,6 +263,10 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
@@ -240,13 +276,16 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = VOEBBApp/VOEBBApp.entitlements;
 				CODE_SIGN_STYLE = Automatic;
+				ENABLE_HARDENED_RUNTIME = YES;
 				CURRENT_PROJECT_VERSION = 10;
 				DEVELOPMENT_TEAM = 9H7F5NMT97;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = VOEBBApp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "VÖPP";
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Die Kamera wird zum Scannen des Barcodes auf dem Bibliotheksausweis verwendet.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -262,6 +301,10 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				SUPPORTS_MAC_DESIGNED_FOR_IPHONE_IPAD = NO;
 				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
