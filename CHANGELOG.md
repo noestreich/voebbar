@@ -5,7 +5,7 @@ Versionen von VÖPP (iOS und macOS im App Store, gemeinsame Versionsnummer) und 
 ## VÖPP 1.8 (iOS + macOS) — 2026-09-09
 
 ### Neu
-- **VÖPP für den Mac:** Dieselbe App läuft jetzt nativ auf macOS 13+ (Apple Silicon und Intel) — als Fenster-App mit zusätzlichem Menüleisten-Symbol, das die Resttage des dringlichsten Mediums zeigt und im Menü alle Konten, Bereitstellungen, Ausleihen und die Verlängern-Aktion anbietet. Universal Purchase mit der iOS-Version; die App aktualisiert sich auf dem Mac stündlich im Hintergrund. Der Barcode-Scanner bleibt iOS-exklusiv.
+- **VÖPP für den Mac:** Dieselbe App läuft jetzt nativ auf macOS 13+ (Apple Silicon und Intel) — als Fenster-App mit zusätzlichem Menüleisten-Symbol, das die Resttage des dringlichsten Mediums zeigt; das Menü fasst jedes Konto in einer Zeile zusammen (Ampelpunkt, Ausleihen, Gebühren, Bereitstellungen, Ausweis-Hinweis) und öffnet das Fenster. Universal Purchase mit der iOS-Version; die App aktualisiert sich auf dem Mac stündlich im Hintergrund. Der Barcode-Scanner bleibt iOS-exklusiv.
 
 ### Unter der Haube
 - Ein Xcode-Target für beide Plattformen; iOS-spezifische Modifier laufen auf macOS als No-ops (`PlatformShims.swift`). Keine funktionalen Änderungen an der iOS-App.
