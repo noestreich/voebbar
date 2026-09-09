@@ -3,9 +3,10 @@ import SwiftUI
 import AppKit
 import VOEBBKit
 
-/// Inhalt des Menüleisten-Menüs (macOS): pro Konto Bereitstellungen und Ausleihen mit
-/// Ampel-Emoji und Resttagen, eine Verlängern-Aktion, darunter Aktualisieren/Öffnen/Beenden.
-/// Einträge öffnen das Hauptfenster — Rückmeldungen (Verlängerung) erscheinen dort.
+/// Inhalt des Menüleisten-Menüs (macOS): pro Konto eine Zeile mit Eckdaten — wie der
+/// eingeklappte Kontokopf im Hauptfenster: Ampelpunkt, Name, Abholcode, Anzahl Ausleihen,
+/// Gebühren — plus Ausweis-Warnung, Bereitstellungen und Fehler, falls vorhanden.
+/// Jeder Eintrag öffnet das Hauptfenster; Aktionen wie Verlängern finden dort statt.
 struct MenuBarView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.openWindow) private var openWindow
@@ -19,6 +20,8 @@ struct MenuBarView: View {
         }
         ForEach(model.accountData, id: \.account.cardNumber) { data in
             accountItems(data)
+        }
+        if !model.accountData.isEmpty {
             Divider()
         }
         Button("Aktualisieren") {
@@ -46,50 +49,75 @@ struct MenuBarView: View {
 
     @ViewBuilder
     private func accountItems(_ data: AccountData) -> some View {
-        Button(accountHeadline(data), action: openMainWindow)
+        Button(action: openMainWindow) {
+            Label {
+                Text(accountHeadline(data))
+            } icon: {
+                Image(nsImage: Self.dot(color: urgencyColor(data)))
+            }
+        }
         if let warning = data.cardExpiryWarning {
-            Text("⚠️ \(warning)")
+            Button(action: openMainWindow) {
+                Label(warning, systemImage: "exclamationmark.triangle")
+            }
+        }
+        if !data.pickups.isEmpty {
+            Button(action: openMainWindow) {
+                Label(pickupLine(data.pickups), systemImage: "tray.and.arrow.down")
+            }
         }
         if let error = data.error {
-            Text("⚠️ \(error)")
-        }
-        ForEach(data.pickups, id: \.id) { pickup in
-            Button("📥 \(shortTitle(pickup.title)) – abholbereit bis \(pickup.readyUntilString)", action: openMainWindow)
-        }
-        ForEach(data.loans.sorted { $0.dueDate < $1.dueDate }, id: \.checkboxValue) { loan in
-            Button("\(loan.bookEmoji) \(shortTitle(loan.title)) – \(dueText(loan))", action: openMainWindow)
-        }
-        if !data.loans.isEmpty {
-            Button(model.renewingCard == data.account.cardNumber
-                   ? "Verlängerung läuft …"
-                   : "Verlängerbare verlängern (\(data.account.name))") {
-                openMainWindow()
-                Task { await model.renewAll(for: data.account) }
+            Button(action: openMainWindow) {
+                Label(error, systemImage: "exclamationmark.circle")
             }
-            .disabled(model.renewingCard != nil || model.renewingLoan != nil)
         }
     }
 
+    /// "Suse (35 Da) · 24 Ausleihen · 0,40 €"
     private func accountHeadline(_ data: AccountData) -> String {
-        var parts = [data.account.name]
-        if let code = data.pickupCode { parts[0] += " (\(code))" }
-        parts.append(data.loans.count == 1 ? "1 Ausleihe" : "\(data.loans.count) Ausleihen")
+        var name = data.account.name
+        if let code = data.pickupCode { name += " (\(code))" }
+        var parts = [name]
+        switch data.loans.count {
+        case 0: parts.append("keine Ausleihen")
+        case 1: parts.append("1 Ausleihe")
+        default: parts.append("\(data.loans.count) Ausleihen")
+        }
         if data.fees > 0 {
             parts.append(String(format: "%.2f €", locale: Locale(identifier: "de_DE"), data.fees))
         }
         return parts.joined(separator: " · ")
     }
 
-    /// Nur der Titel vor " / Autor", auf Menübreite gekürzt.
-    private func shortTitle(_ title: String) -> String {
-        let t = title.components(separatedBy: " / ").first ?? title
-        return t.count > 48 ? String(t.prefix(47)) + "…" : t
+    /// "1 Bereitstellung · bis 19.09.2026" — frühestes Abholdatum, falls bekannt.
+    private func pickupLine(_ pickups: [PickupItem]) -> String {
+        var text = pickups.count == 1 ? "1 Bereitstellung" : "\(pickups.count) Bereitstellungen"
+        let dates = pickups.compactMap { $0.readyUntil == nil ? nil : ($0.readyUntil!, $0.readyUntilString) }
+        if let earliest = dates.min(by: { $0.0 < $1.0 }) {
+            text += " · abholbereit bis \(earliest.1)"
+        }
+        return text
     }
 
-    private func dueText(_ loan: Loan) -> String {
-        if loan.isOverdue { return "überfällig" }
-        let d = loan.daysUntilDue
-        return d == 0 ? "heute fällig" : (d == 1 ? "1 Tag" : "\(d) Tage")
+    /// Gleiche Schwellen wie der Kontokopf im Hauptfenster: rot < 7 Tage oder überfällig,
+    /// orange ≤ 14 Tage, grün sonst, grau ohne Ausleihen.
+    private func urgencyColor(_ data: AccountData) -> NSColor {
+        guard !data.loans.isEmpty else { return .tertiaryLabelColor }
+        if data.loans.contains(where: { $0.isOverdue || $0.daysUntilDue < 7 }) { return .systemRed }
+        if data.loans.contains(where: { $0.daysUntilDue <= 14 }) { return .systemOrange }
+        return .systemGreen
+    }
+
+    /// Farbiger Punkt als Bild — Text- und Symbolfarben werden in Menüs ignoriert,
+    /// ein nicht-Template-NSImage behält seine Farbe.
+    private static func dot(color: NSColor, diameter: CGFloat = 10) -> NSImage {
+        let image = NSImage(size: NSSize(width: diameter, height: diameter), flipped: false) { rect in
+            color.setFill()
+            NSBezierPath(ovalIn: rect.insetBy(dx: 0.5, dy: 0.5)).fill()
+            return true
+        }
+        image.isTemplate = false
+        return image
     }
 
     private func openMainWindow() {
