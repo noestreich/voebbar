@@ -2,10 +2,10 @@
 
 Versionen von VÖPP (iOS und macOS im App Store, gemeinsame Versionsnummer). Die frühere Menüleisten-App VOEBBMenu (eigene Nummer, zuletzt 1.3) wird seit September 2026 nicht mehr weiterentwickelt.
 
-## VÖPP 1.8 (iOS + macOS) — 2026-09-09
+## VÖPP 1.9 (iOS + macOS) — 2026-09-14
 
 ### Neu
-- **VÖPP für den Mac:** Dieselbe App läuft jetzt nativ auf macOS 13+ (Apple Silicon und Intel) — als Fenster-App mit zusätzlichem Menüleisten-Symbol, das die Resttage des dringlichsten Mediums zeigt; das Menü fasst jedes Konto in einer Zeile zusammen (Ampelpunkt, Ausleihen, Gebühren, Bereitstellungen, Ausweis-Hinweis) und öffnet das Fenster. Universal Purchase mit der iOS-Version; die App aktualisiert sich auf dem Mac stündlich im Hintergrund. Der Barcode-Scanner bleibt iOS-exklusiv.
+- **VÖPP für den Mac:** Dieselbe App läuft jetzt nativ auf macOS 13+ (Apple Silicon und Intel) — als Fenster-App mit zusätzlichem Menüleisten-Symbol, das die Resttage des dringlichsten Mediums zeigt; das Menü fasst jedes Konto in einer Zeile zusammen (Ampelpunkt, Ausleihen, Gebühren, Bereitstellungen, Ausweis-Hinweis) und öffnet das Fenster. Ein Download für iPhone und Mac; die App aktualisiert sich auf dem Mac stündlich im Hintergrund. Der Barcode-Scanner bleibt iOS-exklusiv.
 
 - **Verlauf:** Ein Uhr-Symbol in der Toolbar öffnet den Ausleih-Verlauf — oben die laufenden Ausleihen, darunter alle zurückgegebenen Medien, nach Monat gruppiert, mit Suche und Kontofilter. VÖBB bietet keine Historie an; VÖPP leitet sie aus den Momentaufnahmen jedes erfolgreichen Abrufs ab (ausgeliehen = neu in der Liste, zurückgegeben = aus der Liste verschwunden). Bewusst monatsgenau („Ausgeliehen September 2026 · zurückgegeben Oktober 2026“). Erfasst wird nur bei einem Abruf der App, ohne aktive Nutzung entsteht kein Verlauf. In den Konten-Einstellungen per „Verlauf sichern“ abschaltbar (Standard: an). Der Verlauf bleibt ausschließlich auf dem Gerät und wird mit dem Konto gelöscht.
 

@@ -29,7 +29,7 @@ iOS (requires the iOS platform installed in Xcode):
 xcodebuild -project iOS/VOEBBApp.xcodeproj -scheme VOEBBApp -destination 'generic/platform=iOS' build
 ```
 
-macOS (same project, same bundle id, universal purchase):
+macOS (same project, same bundle id, one download for both platforms):
 
 ```
 xcodebuild -project iOS/VOEBBApp.xcodeproj -scheme VOEBBApp -destination 'platform=macOS' build
