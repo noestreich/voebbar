@@ -8,7 +8,7 @@ Verlängerung auf Knopfdruck. Eine App für iPhone und Mac, ein gemeinsamer Kern
 
 - 🌐 **Webseite:** [voepp.de](https://voepp.de/)
 - 📲 **iPhone und 💻 Mac:** [VÖPP im App Store laden](https://apps.apple.com/de/app/voebbar/id6790911430)
-  — ein Kauf für beide Plattformen (iOS 16+, macOS 13+)
+  — ein Download für beide Plattformen (iOS 16+, macOS 13+)
 
 ## VÖPP
 
