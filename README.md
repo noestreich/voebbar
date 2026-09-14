@@ -1,23 +1,16 @@
 # voebbar
 
-Ausleihen, Fälligkeiten und Gebühren mehrerer Bibliothekskarten des
+Ausleihen, Fälligkeiten, Bereitstellungen und Gebühren mehrerer Bibliothekskarten des
 **[VÖBB](https://www.voebb.de/)** (Verbund der Öffentlichen Bibliotheken Berlins) – mit
-Verlängerung auf Knopfdruck. Zwei Apps, ein gemeinsamer Kern (`VOEBBKit`):
-
-- **iOS-App „VÖPP"** (SwiftUI, iOS 16+)
-- **macOS-Menüleisten-App** (AppKit, Swift Package Manager, macOS 13+)
+Verlängerung auf Knopfdruck. Eine App für iPhone und Mac, ein gemeinsamer Kern (`VOEBBKit`).
 
 ## Download
 
 - 🌐 **Webseite:** [voepp.de](https://voepp.de/)
-- 📲 **iPhone:** [VÖPP im App Store laden](https://apps.apple.com/de/app/voebbar/id6790911430)
-- 💻 **Mac:** [VOEBBMenu.dmg aus dem neuesten Release herunterladen](https://github.com/noestreich/voebbar/releases/latest) —
-  dort unter „Assets" die Datei `VOEBBMenu-x.x.dmg` anklicken, öffnen und die App in den
-  Programme-Ordner ziehen (signiert & notarisiert, kein Gatekeeper-Dialog)
+- 📲 **iPhone und 💻 Mac:** [VÖPP im App Store laden](https://apps.apple.com/de/app/voebbar/id6790911430)
+  — ein Kauf für beide Plattformen (iOS 16+, macOS 13+)
 
-## iOS-App „VÖPP"
-
-**[➡️ VÖPP im App Store](https://apps.apple.com/de/app/voebbar/id6790911430)**
+## VÖPP
 
 <p>
   <img src="assets/shot-uebersicht.png" width="30%" alt="Alle Konten mit Ampel-Punkten und Gebühren" />
@@ -27,23 +20,33 @@ Verlängerung auf Knopfdruck. Zwei Apps, ein gemeinsamer Kern (`VOEBBKit`):
 
 **Ausleihen im Blick**
 - Alle Medien gruppiert nach Konto, sortiert nach Fälligkeit — Abschnitte ein-/ausklappbar
-- Ampel-System pro Medium (📕 < 7 Tage · 📙 7–14 Tage · 📗 > 14 Tage); die Ausleihen-Zahl
-  eines Kontos färbt sich nach dem dringlichsten Medium
-- Gebühren pro Konto direkt in der Kopfzeile
+- Ampel-System pro Medium (rot < 7 Tage · orange 7–14 Tage · grün > 14 Tage); die
+  Ausleihen-Zahl eines Kontos färbt sich nach dem dringlichsten Medium
+- Bereitstellungen (abholbereite Bestellungen) oben in der Kontoliste mit Abholfrist,
+  Abholcode und Gebühren direkt in der Kopfzeile, Hinweis bei ablaufendem Ausweis
 - Beim Start sofort der zuletzt geladene Stand, Aktualisierung läuft im Hintergrund —
   mit Fortschrittsleiste und dauerhaft sichtbarem „Zuletzt aktualisiert"-Hinweis
 
 **Verlängern**
 - Einzelne Medien verlängern: Tipp auf ein Medium öffnet die Detailansicht mit
-  Verlängern-Button (alternativ per Wisch-Geste nach links)
-- „Alle verlängern" pro Konto mit Live-Feedback während des Vorgangs
+  Verlängern-Button (auf dem iPhone alternativ per Wisch-Geste nach links)
+- „Verlängerbare verlängern" pro Konto mit Live-Feedback während des Vorgangs
 - Zwei-Schritt-Verlängerung: erst Verlängerbarkeit prüfen, dann nur die verlängerbaren
   Medien einreichen — verhindert, dass VÖBB die ganze Aktion abbricht, sobald ein Titel
-  gesperrt ist
+  gesperrt ist. Als verlängert gilt nur, was VÖBB danach mit neuem Fälligkeitsdatum zeigt
+
+**Verlauf**
+- Lokaler Ausleih-Verlauf hinter dem Uhr-Symbol: laufende Ausleihen oben, zurückgegebene
+  Medien nach Monat gruppiert, mit Suche und Kontofilter — monatsgenau, abschaltbar,
+  bleibt auf dem Gerät
+
+**Mac**
+- Fenster-App plus Menüleisten-Symbol mit den Resttagen des dringlichsten Mediums; das Menü
+  fasst jedes Konto in einer Zeile zusammen und aktualisiert stündlich im Hintergrund
 
 **Konten & Komfort**
 - Beliebig viele Bibliothekskarten, editierbar, mit Passwort-Anzeige per Auge-Knopf
-- Ausweisnummer per Barcode-Scan von der Kartenrückseite übernehmen (Kamera)
+- Ausweisnummer per Barcode-Scan von der Kartenrückseite übernehmen (iPhone-Kamera)
 - Erinnerung vor dem nächsten Rückgabedatum: 1 Tag, 3 Tage oder 1 Woche vorher
   (lokale Benachrichtigung, morgens um 9 Uhr)
 
@@ -55,47 +58,24 @@ Verlängerung auf Knopfdruck. Zwei Apps, ein gemeinsamer Kern (`VOEBBKit`):
 Selbst bauen statt App Store:
 
 ```sh
-open iOS/VOEBBApp.xcodeproj   # in Xcode öffnen, iPhone wählen, Run
+open iOS/VOEBBApp.xcodeproj   # in Xcode öffnen, iPhone oder „My Mac" wählen, Run
 ```
 
-## macOS-Menüleisten-App
+## Frühere Menüleisten-App (VOEBBMenu)
 
-<img src="assets/shot-mac.jpg" width="75%" alt="VÖPP-Menü in der macOS-Menüleiste" />
-
-**Menüleiste & Übersicht**
-- Anzahl aller ausgeliehenen Medien als Badge im Menüleisten-Symbol
-- Dringlichkeitsindikator: Symbol wechselt, wenn ein Medium in weniger als 7 Tagen fällig ist
-- Pro Konto: Anzahl Ausleihen, nächste Fälligkeit (farbcodiert nach Dringlichkeit), offene Gebühren
-- Sortierbares Gesamtfenster über alle Konten mit Emoji-Ampel
-- Tooltips mit vollständigen Titeln und Bibliotheksnamen; Titel in der Menüleiste werden sinnvoll gekürzt
-
-**Verlängern**
-- „Alle verlängern" und „Fällige verlängern (≤ N Tage)" pro Konto, mit derselben
-  Zwei-Schritt-Logik wie in der iOS-App
-
-**Mehrere Konten & Refresh**
-- Unbegrenzt viele Bibliothekskarten, Passwörter nur im macOS-Schlüsselbund
-- Konfigurierbares Auto-Refresh-Intervall und Stale-Prüfung beim Öffnen des Menüs
-
-**[⬇️ Fertige App herunterladen](https://github.com/noestreich/voebbar/releases/latest)** (DMG unter „Assets") — oder selbst bauen:
-
-```sh
-./build_app.sh   # erzeugt VOEBBMenu.app
-open VOEBBMenu.app
-```
-
-Läuft als Accessory-App (`LSUIElement`, kein Dock-Icon). Xcode wird für die Mac-App nicht
-benötigt — nur die Xcode-Kommandozeilen-Tools (`xcode-select --install`).
-
-**Erste Schritte:** App starten (beim ersten Start öffnet sich das Einstellungsfenster),
-Bibliothekskarte mit Name, Ausweisnummer und Passwort hinzufügen — das Menüleisten-Symbol
-zeigt sofort die Ausleihen aller Konten.
+Vor der Mac-Version von VÖPP gab es eine reine AppKit-Menüleisten-App (`Sources/VOEBBMenu`,
+`build_app.sh`). Sie wird **nicht mehr weiterentwickelt**; aktiv gepflegt werden nur noch die
+im App Store erhältlichen Versionen für iOS und macOS. Die letzte fertige Fassung liegt als
+DMG in den [Releases](https://github.com/noestreich/voebbar/releases), der Code bleibt im
+Repository und baut weiterhin mit `./build_app.sh`.
 
 ## Architektur
 
 Reines HTML-Scraping der aDIS-Weboberfläche (`VOEBBService` / `HTMLParser` in `VOEBBKit`),
-kein öffentliches API — gekoppelt an VÖBBs aktuelles Markup. Beide Apps teilen sich Scraper,
-Parser, Models und Konten-Verwaltung; die UI ist jeweils nativ. Siehe `CLAUDE.md` für Details.
+kein öffentliches API — gekoppelt an VÖBBs aktuelles Markup. Die App-Oberfläche ist SwiftUI
+mit einem Xcode-Target für beide Plattformen. Regressionstests laufen mit `swift test` auf
+anonymisierten Seitenaufnahmen. Siehe `CLAUDE.md` für Details, `CHANGELOG.md` für die
+Versionshistorie.
 
 Der Quellcode der Landing Page [voepp.de](https://voepp.de/) liegt unter `website/`.
 

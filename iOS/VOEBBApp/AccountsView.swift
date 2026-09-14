@@ -7,6 +7,7 @@ struct AccountsView: View {
     @State private var showAdd = false
     @State private var editingAccount: LibraryAccount?
     @AppStorage(NotificationScheduler.leadDaysKey) private var notificationLeadDays = NotificationScheduler.defaultLeadDays
+    @AppStorage(AppModel.historyEnabledKey) private var historyEnabled = true
 
     var body: some View {
         container
@@ -130,6 +131,15 @@ struct AccountsView: View {
                 Task {
                     await NotificationScheduler.reschedule(accountData: model.accountData, leadDays: newValue)
                 }
+            }
+
+            Section {
+                Toggle("Verlauf sichern", isOn: $historyEnabled)
+            } header: {
+                Text("Verlauf")
+            } footer: {
+                Text("VÖPP merkt sich bei jedem Abruf, welche Medien in deinen Ausleihlisten neu auftauchen und wieder verschwinden, und zeigt daraus den Verlauf hinter dem Uhr-Symbol. Erfasst wird nur, wenn die App aktualisiert — ohne aktive Nutzung entsteht kein Verlauf, und Rückgaben werden auf den Monat genau festgehalten. Der Verlauf bleibt ausschließlich auf diesem Gerät und wird mit dem Konto gelöscht.")
+                    .wrappingFooter()
             }
 
             Section {

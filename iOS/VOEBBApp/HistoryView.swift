@@ -2,7 +2,7 @@ import SwiftUI
 import VOEBBKit
 
 /// Lokal aufgezeichneter Ausleih-Verlauf: oben die laufenden Ausleihen, darunter die
-/// zurückgegebenen Medien, nach Monat der Rückgabe gruppiert. Rein passiv.
+/// zurückgegebenen Medien, nach Monat der Rückgabe gruppiert. Rein passiv, monatsgenau.
 struct HistoryView: View {
     @EnvironmentObject private var model: AppModel
     @Environment(\.dismiss) private var dismiss
@@ -68,7 +68,9 @@ struct HistoryView: View {
                 Text(model.history.isEmpty ? "Noch kein Verlauf" : "Keine Treffer")
                     .font(.headline)
                 if model.history.isEmpty {
-                    Text("VÖPP zeichnet ab jetzt bei jedem Abruf auf, welche Medien ausgeliehen und zurückgegeben werden. Der Verlauf bleibt ausschließlich auf diesem Gerät.")
+                    Text(model.isHistoryEnabled
+                         ? "VÖPP merkt sich ab jetzt bei jedem Abruf, welche Medien ausgeliehen und zurückgegeben werden — monatsgenau und nur auf diesem Gerät."
+                         : "Der Verlauf ist ausgeschaltet. Du kannst ihn in den Konten-Einstellungen unter „Verlauf sichern“ einschalten.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -162,25 +164,24 @@ struct HistoryRow: View {
         .padding(.vertical, 4)
     }
 
-    /// "Ab 03.09.2026, zurückgegeben 09.09.2026" — Beginn ggf. "spätestens", Rückgabe als
-    /// Zeitraum, wenn zwischen letztem Sehen und erstem Fehlen mehr als ein Tag liegt.
+    /// Bewusst nur monatsgenau: "Ausgeliehen September 2026" bzw.
+    /// "Ausgeliehen September 2026 · zurückgegeben Oktober 2026".
     private var periodText: String {
-        let start = (entry.startUnknown ? "spätestens " : "") + Self.dayFormatter.string(from: entry.firstSeen)
+        let start = Self.monthFormatter.string(from: entry.firstSeen)
         guard let returned = entry.returnedAt else {
-            return "Ausgeliehen seit \(start)"
+            return "Ausgeliehen \(start)"
         }
-        let gapDays = Calendar.current.dateComponents([.day], from: Calendar.current.startOfDay(for: entry.lastSeen),
-                                                      to: Calendar.current.startOfDay(for: returned)).day ?? 0
-        let end = gapDays > 1
-            ? "zurückgegeben zwischen \(Self.dayFormatter.string(from: entry.lastSeen)) und \(Self.dayFormatter.string(from: returned))"
-            : "zurückgegeben \(Self.dayFormatter.string(from: returned))"
-        return "Ab \(start), \(end)"
+        let end = Self.monthFormatter.string(from: returned)
+        return start == end
+            ? "Ausgeliehen und zurückgegeben \(end)"
+            : "Ausgeliehen \(start) · zurückgegeben \(end)"
     }
 
-    private static let dayFormatter: DateFormatter = {
+    private static let monthFormatter: DateFormatter = {
         let f = DateFormatter()
         f.locale = Locale(identifier: "de_DE")
-        f.dateFormat = "dd.MM.yyyy"
+        f.dateFormat = "LLLL yyyy"
         return f
     }()
+
 }

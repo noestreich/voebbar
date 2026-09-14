@@ -17,6 +17,11 @@ final class AppModel: ObservableObject {
     /// Lokal aufgezeichneter Ausleih-Verlauf (siehe LoanHistoryStore).
     @Published private(set) var history: [LoanHistoryEntry] = []
     private let historyStore = LoanHistoryStore()
+    /// Einstellung „Verlauf sichern“ — standardmäßig an, vom Nutzer abschaltbar.
+    static let historyEnabledKey = "voebb_history_enabled"
+    var isHistoryEnabled: Bool {
+        UserDefaults.standard.object(forKey: Self.historyEnabledKey) as? Bool ?? true
+    }
 
     private let cacheKey = "voebb_cached_data_v1"
     private let lastRefreshKey = "voebb_last_refresh"
@@ -103,9 +108,11 @@ final class AppModel: ObservableObject {
         accountData = results
         lastRefreshed = Date()
         saveCache()
-        // Verlauf fortschreiben — nur fehlerfreie (validierte) Konten fließen ein
-        historyStore.record(results)
-        history = historyStore.entries
+        // Verlauf fortschreiben — nur wenn eingeschaltet, und nur fehlerfreie (validierte) Konten
+        if isHistoryEnabled {
+            historyStore.record(results)
+            history = historyStore.entries
+        }
 
         await NotificationScheduler.reschedule(accountData: accountData, leadDays: NotificationScheduler.leadDays)
     }
