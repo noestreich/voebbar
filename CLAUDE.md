@@ -64,6 +64,7 @@ Both VÖBB renewal buttons ("Alle verlängern" and "Markierte Medien verlängern
 
 ### Storage
 - `AccountStorage` (UserDefaults key `voebb_accounts_v1`) — account metadata (name + card number), the refresh interval (`voebb_refresh_interval_hours`, constrained to `AccountStorage.availableRefreshIntervalsHours`), and the "due soon" threshold in days for the per-account "Fällige verlängern" action (`voebb_renewal_due_days`, constrained to `availableRenewalDueDays`).
+- `LoanHistoryStore` (JSON at Application Support/VOEPP/loan-history.json, app container) — the locally derived loan history. VÖBB offers no history; the store diffs each successful refresh against its open entries: new `Loan.historyKey` (media number from the title cell's third line, fallback title|library) → new entry, missing key → `returnedAt = now` (so the return happened between `lastSeen` and `returnedAt`). Accounts with `error != nil` are skipped so a failed fetch never looks like a mass return; the first recording for an account marks entries `startUnknown`. Renewals are deliberately not tracked. Shown by `HistoryView` (iOS/macOS app only).
 - `KeychainHelper` — passwords, keyed by card number, Keychain service `de.voebb.menubar`. Passwords never touch UserDefaults.
 - The bundle id `de.voebb.menubar` is shared between `KeychainHelper`'s service name and `Info.plist` — if one changes, existing saved passwords become unreachable via Keychain lookup.
 

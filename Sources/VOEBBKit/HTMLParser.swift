@@ -90,7 +90,7 @@ enum HTMLParser {
         let cbMatch = cbPattern.firstMatch(in: rowHTML, range: NSRange(rowHTML.startIndex..., in: rowHTML))
         let cbValue = cbMatch.flatMap { Range($0.range(at: 1), in: rowHTML).map { String(rowHTML[$0]) } } ?? ""
 
-        return Loan(
+        var loan = Loan(
             title: title,
             dueDate: dueDate,
             dueDateString: dateStr,
@@ -98,6 +98,21 @@ enum HTMLParser {
             renewalStatus: status,
             checkboxValue: cbValue
         )
+        loan.mediaNumber = extractMediaNumber(cols[3])
+        return loan
+    }
+
+    /// Mediennummer aus der Titelzelle: "Titel<br>Signatur<br>0012345678" → letzte Zeile,
+    /// wenn sie nur aus Ziffern besteht (mindestens 6, um Bandzählungen auszuschließen).
+    static func extractMediaNumber(_ rawTitleCell: String) -> String? {
+        let lines = rawTitleCell
+            .replacingOccurrences(of: #"<br\s*/?>"#, with: "\n", options: [.regularExpression, .caseInsensitive])
+            .components(separatedBy: "\n")
+            .map { stripHTML($0).trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        guard let last = lines.last, lines.count >= 2, last.count >= 6,
+              last.allSatisfy(\.isNumber) else { return nil }
+        return last
     }
 
     // MARK: - Amounts

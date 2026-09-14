@@ -7,7 +7,10 @@ Versionen von VÖPP (iOS und macOS im App Store, gemeinsame Versionsnummer) und 
 ### Neu
 - **VÖPP für den Mac:** Dieselbe App läuft jetzt nativ auf macOS 13+ (Apple Silicon und Intel) — als Fenster-App mit zusätzlichem Menüleisten-Symbol, das die Resttage des dringlichsten Mediums zeigt; das Menü fasst jedes Konto in einer Zeile zusammen (Ampelpunkt, Ausleihen, Gebühren, Bereitstellungen, Ausweis-Hinweis) und öffnet das Fenster. Universal Purchase mit der iOS-Version; die App aktualisiert sich auf dem Mac stündlich im Hintergrund. Der Barcode-Scanner bleibt iOS-exklusiv.
 
+- **Verlauf:** Ein Uhr-Symbol in der Toolbar öffnet den Ausleih-Verlauf — oben die laufenden Ausleihen, darunter alle zurückgegebenen Medien, nach Monat gruppiert, mit Suche und Kontofilter. VÖBB bietet keine Historie an; VÖPP leitet sie aus den Momentaufnahmen jedes erfolgreichen Abrufs ab (ausgeliehen = neu in der Liste, zurückgegeben = aus der Liste verschwunden). Die Aufzeichnung beginnt mit diesem Update; Medien, die da schon ausgeliehen waren, erscheinen mit „spätestens“. Rückgaben werden als Zeitraum angezeigt, wenn zwischen zwei Abrufen mehr als ein Tag lag. Der Verlauf bleibt ausschließlich auf dem Gerät und wird mit dem Konto gelöscht.
+
 ### Unter der Haube
+- Der Parser behält jetzt die Mediennummer jedes Exemplars (dritte Zeile der Titelzelle) als stabile Identität für den Verlauf.
 - Ein Xcode-Target für beide Plattformen; iOS-spezifische Modifier laufen auf macOS als No-ops (`PlatformShims.swift`). Keine funktionalen Änderungen an der iOS-App.
 
 ## VÖPP 1.7 (iOS) / VOEBBMenu 1.3 (macOS) — 2026-09-07

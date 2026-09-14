@@ -24,6 +24,12 @@ public struct Loan: Codable {
     public var isRenewable: Bool? = nil
     /// Reason a blocked item can't be renewed (e.g. "Vormerkungen"); empty otherwise.
     public var renewalReason: String = ""
+    /// Mediennummer (dritte Zeile der Titelzelle) — die einzige stabile Identität eines
+    /// Exemplars über Abrufe hinweg; nil, wenn VÖBB keine liefert. Nur für die Historie.
+    public var mediaNumber: String? = nil
+
+    /// Schlüssel für die Ausleih-Historie: Mediennummer, ersatzweise Titel + Bibliothek.
+    var historyKey: String { mediaNumber ?? "\(title)|\(library)" }
 
     /// Überfällig erst ab dem Tag NACH dem Fälligkeitsdatum — am Fälligkeitstag selbst
     /// ist das Buch noch regulär zurückgebbar/verlängerbar. (dueDate ist Mitternacht

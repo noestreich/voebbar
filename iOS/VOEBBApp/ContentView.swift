@@ -1,23 +1,10 @@
 import SwiftUI
 import VOEBBKit
 
-/// Anzeige-Helfer für Loans (reine Präsentation — Parser und Kit bleiben unberührt).
+/// Anzeige-Helfer für Loans (siehe TitleFormatting.swift für die gemeinsame Logik).
 private extension Loan {
-    /// "Titel : Untertitel / Autor" → nur der Titel-Teil vor dem ersten " / ".
-    var displayTitle: String {
-        guard let r = title.range(of: " / ") else { return title }
-        return String(title[..<r.lowerBound]).trimmingCharacters(in: .whitespaces)
-    }
-
-    /// Autor-/Verantwortlichkeits-Teil hinter " / ", falls vorhanden.
-    /// VÖBB nutzt Platzhalter wie "X" als Verantwortlichen-Angabe (v.a. bei Comics) —
-    /// solche Pseudo-Autoren werden ausgeblendet.
-    var displayAuthor: String? {
-        guard let r = title.range(of: " / ") else { return nil }
-        let author = String(title[r.upperBound...]).trimmingCharacters(in: .whitespaces)
-        guard author.count > 2 else { return nil }
-        return author
-    }
+    var displayTitle: String { title.voebbDisplayTitle }
+    var displayAuthor: String? { title.voebbDisplayAuthor }
 
     /// Ampelfarbe des Mediums (gleiche Schwellen wie bookEmoji).
     var urgencyColor: Color {
@@ -40,6 +27,7 @@ struct SelectedLoan: Identifiable {
 struct ContentView: View {
     @EnvironmentObject private var model: AppModel
     @State private var showAccounts = false
+    @State private var showHistory = false
     @State private var collapsedAccounts: Set<String> = []
     @State private var selectedLoan: SelectedLoan?
 
@@ -67,16 +55,26 @@ struct ContentView: View {
                     }
                     .disabled(model.isLoading)
                 }
-                ToolbarItem(placement: .trailingAction) {
+                ToolbarItemGroup(placement: .trailingAction) {
+                    Button {
+                        showHistory = true
+                    } label: {
+                        Image(systemName: "clock.arrow.circlepath")
+                    }
+                    .help("Verlauf")
                     Button {
                         showAccounts = true
                     } label: {
                         Image(systemName: "person.2")
                     }
+                    .help("Konten")
                 }
             }
             .sheet(isPresented: $showAccounts) {
                 AccountsView()
+            }
+            .sheet(isPresented: $showHistory) {
+                HistoryView()
             }
             .sheet(item: $selectedLoan) { selection in
                 LoanDetailView(loan: selection.loan, account: selection.account)
@@ -315,13 +313,7 @@ struct PickupRow: View {
         .padding(.vertical, 4)
     }
 
-    private var shortLibrary: String {
-        if let colon = pickup.library.lastIndex(of: ":") {
-            return String(pickup.library[pickup.library.index(after: colon)...])
-                .trimmingCharacters(in: .whitespaces)
-        }
-        return pickup.library
-    }
+    private var shortLibrary: String { pickup.library.voebbShortLibrary }
 }
 
 struct LoanRow: View {
@@ -377,13 +369,7 @@ struct LoanRow: View {
         .padding(.vertical, 4)
     }
 
-    private var shortLibrary: String {
-        if let colon = loan.library.lastIndex(of: ":") {
-            return String(loan.library[loan.library.index(after: colon)...])
-                .trimmingCharacters(in: .whitespaces)
-        }
-        return loan.library
-    }
+    private var shortLibrary: String { loan.library.voebbShortLibrary }
 }
 
 /// Detail-Sheet für ein einzelnes Medium: voller Titel, Metadaten und

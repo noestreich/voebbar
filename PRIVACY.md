@@ -1,6 +1,6 @@
 # Datenschutzerklärung — VÖPP
 
-*Stand: Juli 2026*
+*Stand: September 2026*
 
 VÖPP ist ein privates, nicht-kommerzielles Projekt und steht in keiner Verbindung zum
 Verbund der Öffentlichen Bibliotheken Berlins (VÖBB) oder zur ZLB.
@@ -20,6 +20,9 @@ Es gibt keine Analyse-, Tracking- oder Werbe-Komponenten und keine eigenen Serve
 - **Ausleihdaten (Titel, Fälligkeitsdaten, Gebühren)** — werden von der VÖBB-Webseite
   abgerufen und lokal auf dem Gerät zwischengespeichert, damit die App beim Start sofort den
   letzten Stand anzeigen kann.
+- **Ausleih-Verlauf** — die App merkt sich lokal, welche Medien wann in deiner Ausleihliste
+  aufgetaucht und wieder verschwunden sind, und zeigt daraus einen Verlauf an. Er wird nur auf
+  dem Gerät gespeichert, nie übertragen und beim Entfernen des Kontos gelöscht.
 
 ## Wohin verbindet sich die App?
 

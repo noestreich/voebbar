@@ -14,6 +14,9 @@ final class AppModel: ObservableObject {
     @Published private(set) var renewingLoan: String?
     @Published private(set) var lastRefreshed: Date?
     @Published var alert: AlertMessage?
+    /// Lokal aufgezeichneter Ausleih-Verlauf (siehe LoanHistoryStore).
+    @Published private(set) var history: [LoanHistoryEntry] = []
+    private let historyStore = LoanHistoryStore()
 
     private let cacheKey = "voebb_cached_data_v1"
     private let lastRefreshKey = "voebb_last_refresh"
@@ -26,6 +29,7 @@ final class AppModel: ObservableObject {
 
     init() {
         loadCache()
+        history = historyStore.entries
         #if os(macOS)
         // Auf dem Mac läuft die App auch ohne offenes Fenster (Menüleiste) weiter —
         // deshalb hier stündlich aktualisieren, nicht nur bei Fenster-Aktivierung.
@@ -99,6 +103,9 @@ final class AppModel: ObservableObject {
         accountData = results
         lastRefreshed = Date()
         saveCache()
+        // Verlauf fortschreiben — nur fehlerfreie (validierte) Konten fließen ein
+        historyStore.record(results)
+        history = historyStore.entries
 
         await NotificationScheduler.reschedule(accountData: accountData, leadDays: NotificationScheduler.leadDays)
     }
@@ -176,5 +183,7 @@ final class AppModel: ObservableObject {
         accounts = AccountStorage.shared.accounts
         accountData.removeAll { $0.account.cardNumber == account.cardNumber }
         saveCache()
+        historyStore.remove(cardNumber: account.cardNumber)
+        history = historyStore.entries
     }
 }
