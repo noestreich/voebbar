@@ -34,7 +34,7 @@ struct VOEBBApp: App {
         WindowGroup(id: "main") {
             ContentView()
                 .environmentObject(model)
-                .frame(minWidth: 420, minHeight: 480)
+                .frame(minWidth: 520, minHeight: 480) // ≥ breitestes Sheet, sonst ragt es über das Fenster hinaus
         }
         .defaultSize(width: 540, height: 760)
         #else

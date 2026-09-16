@@ -60,7 +60,7 @@ struct AccountsView: View {
             }
             .padding(12)
         }
-        .frame(minWidth: 500, idealWidth: 540, minHeight: 600)
+        .frame(minWidth: 500, idealWidth: 520, minHeight: 600)
         #endif
     }
 

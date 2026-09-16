@@ -2,6 +2,11 @@
 
 Versionen von VÖPP (iOS und macOS im App Store, gemeinsame Versionsnummer). Die frühere Menüleisten-App VOEBBMenu (eigene Nummer, zuletzt 1.3) wird seit September 2026 nicht mehr weiterentwickelt.
 
+## VÖPP 1.9.1 (iOS + macOS) — 2026-09-16
+
+### Neu
+- **Verlauf teilen:** Das Teilen-Symbol im Verlauf gibt die angezeigte Liste als Text weiter — mit Kontofilter und Suche wie in der Ansicht, gegliedert in „Aktuell ausgeliehen“ und Rückgabemonate. Über das Systemmenü an Nachrichten, Mail, Notizen oder als Datei.
+
 ## VÖPP 1.9 (iOS + macOS) — 2026-09-14
 
 ### Neu

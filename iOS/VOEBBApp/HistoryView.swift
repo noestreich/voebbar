@@ -20,15 +20,19 @@ struct HistoryView: View {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Fertig") { dismiss() }
                     }
-                    if model.accounts.count > 1 {
-                        ToolbarItem(placement: .primaryAction) { accountPicker }
+                    ToolbarItemGroup(placement: .primaryAction) {
+                        shareLink
+                        if model.accounts.count > 1 { accountPicker }
                     }
                 }
         }
         #else
         VStack(spacing: 0) {
             SheetHeader(title: "Verlauf") {
-                if model.accounts.count > 1 { accountPicker }
+                HStack(spacing: 12) {
+                    if model.accounts.count > 1 { accountPicker }
+                    shareLink
+                }
             }
             TextField("Titel oder Bibliothek", text: $searchText)
                 .textFieldStyle(.roundedBorder)
@@ -43,8 +47,19 @@ struct HistoryView: View {
             }
             .padding(12)
         }
-        .frame(minWidth: 560, idealWidth: 620, minHeight: 640)
+        .frame(minWidth: 500, idealWidth: 560, minHeight: 600)
         #endif
+    }
+
+    /// Teilt die aktuell angezeigte Liste (Filter und Suche berücksichtigt) als Text über
+    /// das Systemmenü — Nachrichten, Mail, Notizen, „In Dateien sichern“ usw.
+    private var shareLink: some View {
+        ShareLink(item: exportText, subject: Text("VÖPP – Ausleih-Verlauf"),
+                  preview: SharePreview("VÖPP – Ausleih-Verlauf", image: Image(systemName: "clock.arrow.circlepath"))) {
+            Image(systemName: "square.and.arrow.up")
+        }
+        .disabled(filtered.isEmpty)
+        .help("Verlauf als Text teilen")
     }
 
     private var accountPicker: some View {
@@ -92,6 +107,40 @@ struct HistoryView: View {
                 }
             }
         }
+    }
+
+    // MARK: - Export
+
+    /// Klartext-Fassung der angezeigten Liste, gleiche Gliederung und Monatsgenauigkeit wie die Ansicht.
+    private var exportText: String {
+        let dateFormatter = DateFormatter()
+        dateFormatter.locale = Locale(identifier: "de_DE")
+        dateFormatter.dateFormat = "dd.MM.yyyy"
+        let accountLabel = model.accounts.first { $0.cardNumber == accountFilter }?.name ?? "Alle Konten"
+
+        var lines = ["VÖPP – Ausleih-Verlauf", "Stand \(dateFormatter.string(from: Date())) · \(accountLabel)"]
+        if !searchText.isEmpty { lines.append("Suche: \(searchText)") }
+
+        func line(_ entry: LoanHistoryEntry) -> String {
+            var parts = [entry.title.voebbDisplayTitle]
+            if let author = entry.title.voebbDisplayAuthor { parts.append(author) }
+            parts.append(entry.library.voebbShortLibrary)
+            if accountFilter == nil { parts.append(entry.accountName) }
+            parts.append(entry.periodText)
+            return "• " + parts.joined(separator: " – ")
+        }
+
+        if !openEntries.isEmpty {
+            lines.append("")
+            lines.append("Aktuell ausgeliehen")
+            lines.append(contentsOf: openEntries.map(line))
+        }
+        for group in monthGroups {
+            lines.append("")
+            lines.append(group.label)
+            lines.append(contentsOf: group.entries.map(line))
+        }
+        return lines.joined(separator: "\n")
     }
 
     // MARK: - Daten
@@ -152,7 +201,7 @@ struct HistoryRow: View {
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
-            Text(periodText)
+            Text(entry.periodText)
                 .font(.caption)
                 .foregroundStyle(entry.isOpen ? Color.accentColor : Color.secondary)
                 .lineLimit(2)
@@ -163,12 +212,14 @@ struct HistoryRow: View {
         }
         .padding(.vertical, 4)
     }
+}
 
+extension LoanHistoryEntry {
     /// Bewusst nur monatsgenau: "Ausgeliehen September 2026" bzw.
     /// "Ausgeliehen September 2026 · zurückgegeben Oktober 2026".
-    private var periodText: String {
-        let start = Self.monthFormatter.string(from: entry.firstSeen)
-        guard let returned = entry.returnedAt else {
+    var periodText: String {
+        let start = Self.monthFormatter.string(from: firstSeen)
+        guard let returned = returnedAt else {
             return "Ausgeliehen \(start)"
         }
         let end = Self.monthFormatter.string(from: returned)
@@ -183,5 +234,4 @@ struct HistoryRow: View {
         f.dateFormat = "LLLL yyyy"
         return f
     }()
-
 }
