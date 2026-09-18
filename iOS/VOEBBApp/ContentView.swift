@@ -158,13 +158,14 @@ struct ContentView: View {
     private var statusText: String {
         let isRefreshing = model.refreshProgress != nil
         guard let date = model.lastRefreshed else {
-            return isRefreshing ? "Aktualisiere …" : ""
+            return isRefreshing ? String(localized: "Aktualisiere …") : ""
         }
         let formatter = RelativeDateTimeFormatter()
-        formatter.locale = Locale(identifier: "de_DE")
         formatter.unitsStyle = .short
         let ago = formatter.localizedString(for: date, relativeTo: Date())
-        return isRefreshing ? "Stand \(ago) – aktualisiere …" : "Zuletzt aktualisiert \(ago)"
+        return isRefreshing
+            ? String(localized: "Stand \(ago) – aktualisiere …")
+            : String(localized: "Zuletzt aktualisiert \(ago)")
     }
 
     @ViewBuilder
@@ -183,7 +184,7 @@ struct ContentView: View {
                     PickupRow(pickup: pickup)
                 }
                 if let error = data.error {
-                    Label(data.loans.isEmpty ? error : "\(error) — angezeigt wird der letzte bekannte Stand",
+                    Label(data.loans.isEmpty ? error : String(localized: "\(error) — angezeigt wird der letzte bekannte Stand"),
                           systemImage: "exclamationmark.triangle")
                         .foregroundStyle(.red)
                 }
@@ -307,18 +308,19 @@ struct PickupRow: View {
         .accessibilityLabel(accessibilityText)
     }
 
-    /// "bis 01.10." — Tag und Monat, das Jahr trägt bei einer Abholfrist nichts bei.
+    /// "bis 01.10." — Tag und Monat in der Systemsprache, das Jahr trägt bei einer Abholfrist nichts bei.
     private var readyUntilText: String {
-        let s = pickup.readyUntilString
-        guard s.count == 10, s[s.index(s.startIndex, offsetBy: 2)] == "." else {
-            return s.isEmpty ? "abholbereit" : "bis \(s)"
+        if let date = pickup.readyUntil {
+            return String(localized: "bis \(date.formatted(.dateTime.day(.twoDigits).month(.twoDigits)))")
         }
-        return "bis \(s.prefix(6))"
+        return pickup.readyUntilString.isEmpty
+            ? String(localized: "abholbereit")
+            : String(localized: "bis \(pickup.readyUntilString)")
     }
 
     private var accessibilityText: String {
-        var parts = [pickup.title.voebbDisplayTitle, "Bereitstellung"]
-        if !pickup.readyUntilString.isEmpty { parts.append("abholbereit bis \(pickup.readyUntilString)") }
+        var parts = [pickup.title.voebbDisplayTitle, String(localized: "Bereitstellung")]
+        if !pickup.readyUntilString.isEmpty { parts.append(String(localized: "abholbereit bis \(pickup.readyUntilString)")) }
         parts.append(pickup.library.voebbShortLibrary)
         return parts.joined(separator: ", ")
     }
@@ -359,7 +361,7 @@ struct LoanRow: View {
             }
             Spacer(minLength: 12)
             VStack(alignment: .trailing, spacing: 3) {
-                Text(loan.isOverdue ? "überfällig" : "\(loan.daysUntilDue) Tage")
+                (loan.isOverdue ? Text("überfällig") : Text("\(loan.daysUntilDue) Tage"))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(loan.urgencyColor)
                 Text(loan.dueDateString)
@@ -480,10 +482,10 @@ struct LoanDetailView: View {
 
     private var dueText: String {
         if loan.isOverdue {
-            return "Fällig am \(loan.dueDateString) — überfällig"
+            return String(localized: "Fällig am \(loan.dueDateString) — überfällig")
         }
-        let days = loan.daysUntilDue
-        return "Fällig am \(loan.dueDateString) (in \(days) Tag\(days == 1 ? "" : "en"))"
+        let inDays = String(localized: "in \(loan.daysUntilDue) Tagen")
+        return String(localized: "Fällig am \(loan.dueDateString) (\(inDays))")
     }
 
     /// Bekannter Verlängerungsstatus, immer ausgeschrieben: Die Statusspalte der

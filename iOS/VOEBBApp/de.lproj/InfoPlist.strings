@@ -1,3 +1,4 @@
-/* Name im macOS-App-Menü und in Finder/Dock; die Binärdatei bleibt ASCII (VOEBBApp) */
+/* Name in Dock/Finder/App-Menü; die Binärdatei bleibt ASCII (VOEBBApp) */
 "CFBundleName" = "VÖPP";
 "CFBundleDisplayName" = "VÖPP";
+"NSCameraUsageDescription" = "Die Kamera wird zum Scannen des Barcodes auf dem Bibliotheksausweis verwendet.";

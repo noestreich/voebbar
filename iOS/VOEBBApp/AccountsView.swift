@@ -43,7 +43,7 @@ struct AccountsView: View {
         }
         #else
         VStack(spacing: 0) {
-            SheetHeader(title: "Konten") {
+            SheetHeader(title: Text("Konten")) {
                 Button {
                     showAdd = true
                 } label: {
@@ -146,7 +146,7 @@ struct AccountsView: View {
             } header: {
                 Text("Verlängerung")
             } footer: {
-                Text("VÖPP prüft vor jeder Verlängerung, welche Medien der VÖBB gerade verlängern lässt, und reicht nur diese ein. Medien mit einem \(Image(systemName: "lock.fill"))-Symbol sind derzeit nicht verlängerbar — etwa wegen Vormerkungen oder weil die maximale Anzahl an Verlängerungen erreicht ist. Der genaue Grund steht in der Detailansicht des Mediums.")
+                Text("VÖPP prüft vor jeder Verlängerung, welche Medien der VÖBB gerade verlängern lässt, und reicht nur diese ein. Medien mit einem Schloss-Symbol sind derzeit nicht verlängerbar — etwa wegen Vormerkungen oder weil die maximale Anzahl an Verlängerungen erreicht ist. Der genaue Grund steht in der Detailansicht des Mediums.")
                     .wrappingFooter()
             }
 
@@ -166,10 +166,10 @@ struct AccountsView: View {
         }
         var parts: [String] = []
         if let code = data.pickupCode {
-            parts.append("Abholcode \(code)")
+            parts.append(String(localized: "Abholcode \(code)"))
         }
         if !data.cardValidUntil.isEmpty {
-            parts.append("Ausweis gültig bis \(data.cardValidUntil)")
+            parts.append(String(localized: "Ausweis gültig bis \(data.cardValidUntil)"))
         }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
@@ -204,7 +204,7 @@ struct AccountFormView: View {
     }
 
     private var title: String {
-        account == nil ? "Karte hinzufügen" : "Konto bearbeiten"
+        account == nil ? String(localized: "Karte hinzufügen") : String(localized: "Konto bearbeiten")
     }
 
     var body: some View {
@@ -228,7 +228,7 @@ struct AccountFormView: View {
         }
         #else
         VStack(spacing: 0) {
-            SheetHeader(title: title) { EmptyView() }
+            SheetHeader(title: Text(title)) { EmptyView() }
             form
                 .groupedFormStyle()
             Divider()

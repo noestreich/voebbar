@@ -43,11 +43,11 @@ enum NotificationScheduler {
         guard await center.notificationSettings().authorizationStatus == .authorized else { return }
 
         let content = UNMutableNotificationContent()
-        content.title = "VÖPP – Rückgabe steht an"
+        content.title = String(localized: "VÖPP – Rückgabe steht an")
         if dueLoans.count == 1, let item = dueLoans.first {
-            content.body = "„\(item.loan.title)“ (\(item.account)) ist am \(item.loan.dueDateString) fällig."
+            content.body = String(localized: "„\(item.loan.title)“ (\(item.account)) ist am \(item.loan.dueDateString) fällig.")
         } else {
-            content.body = "\(dueLoans.count) Medien sind am \(nearest.loan.dueDateString) fällig."
+            content.body = String(localized: "\(dueLoans.count) Medien sind am \(nearest.loan.dueDateString) fällig.")
         }
         content.sound = .default
 

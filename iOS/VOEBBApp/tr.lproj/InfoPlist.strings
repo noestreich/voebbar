@@ -1,4 +1,4 @@
 /* Name in Dock/Finder/App-Menü; die Binärdatei bleibt ASCII (VOEBBApp) */
 "CFBundleName" = "VÖPP";
 "CFBundleDisplayName" = "VÖPP";
-"NSCameraUsageDescription" = "The camera is used to scan the barcode on your library card.";
+"NSCameraUsageDescription" = "Kamera, kütüphane kartınızdaki barkodu taramak için kullanılır.";

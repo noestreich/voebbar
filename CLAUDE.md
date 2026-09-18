@@ -39,6 +39,10 @@ or open `iOS/VOEBBApp.xcodeproj` in Xcode and run on a device or "My Mac". The p
 
 `swift test` runs the `VOEBBKitTests` target (XCTest, `@testable import VOEBBKit`). Parser tests use anonymized real pages in `Tests/VOEBBKitTests/Fixtures/` (overview + loans list); regenerate them from a fresh HAR with `Tests/VOEBBKitTests/anonymize_fixtures.py` — never commit a raw HAR. The fixtures are frozen: they catch our regressions, not VÖBB markup changes.
 
+## Localization
+
+The App Store app is localized (de source, en/tr/pl/ru) via `iOS/VOEBBApp/Localizable.xcstrings`; the German literal is the key, so a missing translation falls back to German and the German UI never changes. SwiftUI `Text`/`Button`/`Label` literals localize automatically; plain `String` literals must use `String(localized:)` (interpolations become `%@`/`%lld` in the key — keys are non-positional, translations may use `%1$@`). Plural-bearing keys (`%lld Ausleihen`, `%lld Tage`, `in %lld Tagen`, `%lld Bereitstellungen`, `%lld Medien verlängert.`, `%lld Medien sind am %@ fällig.`) carry `variations.plural` for every language including de. The catalog is maintained by hand (entries are `extractionState: manual`); add new UI strings there for all four languages. Never localize `VOEBBKit`: its German strings are scraping patterns and test expectations. Kit-produced user messages (`RenewalOutcome.userMessage`, `VOEBBError`) are translated app-side in `Messages.swift`. No hard-coded `de_DE` locales in views — use `.formatted(...)`. `InfoPlist.strings` (de/en/tr/pl/ru) localizes the camera usage description and bundle names. Data from VÖBB (titles, status texts, library names) stays German by design; `LibraryNames` short forms are proper nouns.
+
 No linter/formatter is configured.
 
 ## Architecture

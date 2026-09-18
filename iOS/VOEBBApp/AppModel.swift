@@ -77,7 +77,7 @@ final class AppModel: ObservableObject {
         for (index, account) in accounts.enumerated() {
             guard let password = AccountStorage.shared.password(for: account) else {
                 var data = AccountData(account: account)
-                data.error = "Kein Passwort gespeichert"
+                data.error = String(localized: "Kein Passwort gespeichert")
                 results.append(data)
                 refreshProgress = Double(index + 1) / Double(accounts.count)
                 continue
@@ -97,7 +97,7 @@ final class AppModel: ObservableObject {
                 // bleibt alt), nur mit Fehlermarkierung versehen.
                 var data = accountData.first(where: { $0.account.cardNumber == account.cardNumber })
                     ?? AccountData(account: account)
-                data.error = error.localizedDescription
+                data.error = UserFacingMessages.text(for: error)
                 results.append(data)
             }
             refreshProgress = Double(index + 1) / Double(accounts.count)
@@ -148,11 +148,11 @@ final class AppModel: ObservableObject {
             let session = VOEBBSession(account: account)
             let outcome = try await session.renewLoan(password: password, matching: loan)
             renewingLoan = nil
-            alert = AlertMessage(title: loan.title, message: outcome.userMessage)
+            alert = AlertMessage(title: loan.title, message: outcome.localizedUserMessage)
             await refresh()
         } catch {
             renewingLoan = nil
-            alert = AlertMessage(title: "Fehler beim Verlängern", message: error.localizedDescription)
+            alert = AlertMessage(title: String(localized: "Fehler beim Verlängern"), message: UserFacingMessages.text(for: error))
         }
     }
 
@@ -164,11 +164,11 @@ final class AppModel: ObservableObject {
             let session = VOEBBSession(account: account)
             let outcome = try await session.renewAllLoans(password: password)
             renewingCard = nil
-            alert = AlertMessage(title: account.name, message: outcome.userMessage)
+            alert = AlertMessage(title: account.name, message: outcome.localizedUserMessage)
             await refresh()
         } catch {
             renewingCard = nil
-            alert = AlertMessage(title: "Fehler beim Verlängern", message: error.localizedDescription)
+            alert = AlertMessage(title: String(localized: "Fehler beim Verlängern"), message: UserFacingMessages.text(for: error))
         }
     }
 

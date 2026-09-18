@@ -78,25 +78,23 @@ struct MenuBarView: View {
         var name = data.account.name
         if let code = data.pickupCode { name += " (\(code))" }
         var parts = [name]
-        switch data.loans.count {
-        case 0: parts.append("keine Ausleihen")
-        case 1: parts.append("1 Ausleihe")
-        default: parts.append("\(data.loans.count) Ausleihen")
-        }
+        parts.append(data.loans.isEmpty
+                     ? String(localized: "keine Ausleihen")
+                     : String(localized: "\(data.loans.count) Ausleihen"))
         if data.fees > 0 {
-            parts.append(String(format: "%.2f €", locale: Locale(identifier: "de_DE"), data.fees))
+            parts.append(data.fees.formatted(.currency(code: "EUR")))
         }
         return parts.joined(separator: " · ")
     }
 
     /// "1 Bereitstellung · bis 19.09.2026" — frühestes Abholdatum, falls bekannt.
     private func pickupLine(_ pickups: [PickupItem]) -> String {
-        var text = pickups.count == 1 ? "1 Bereitstellung" : "\(pickups.count) Bereitstellungen"
+        let count = String(localized: "\(pickups.count) Bereitstellungen")
         let dates = pickups.compactMap { $0.readyUntil == nil ? nil : ($0.readyUntil!, $0.readyUntilString) }
         if let earliest = dates.min(by: { $0.0 < $1.0 }) {
-            text += " · abholbereit bis \(earliest.1)"
+            return String(localized: "\(count) · abholbereit bis \(earliest.1)")
         }
-        return text
+        return count
     }
 
     /// Gleiche Schwellen wie der Kontokopf im Hauptfenster: rot < 7 Tage oder überfällig,

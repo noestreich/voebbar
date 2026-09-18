@@ -1,0 +1,4 @@
+/* Name in Dock/Finder/App-Menü; die Binärdatei bleibt ASCII (VOEBBApp) */
+"CFBundleName" = "VÖPP";
+"CFBundleDisplayName" = "VÖPP";
+"NSCameraUsageDescription" = "Камера используется для сканирования штрихкода на читательском билете.";

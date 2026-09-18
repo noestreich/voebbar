@@ -82,13 +82,13 @@ extension ToolbarItemPlacement {
 /// Kopfzeile für Sheets auf macOS — Toolbars werden in macOS-Sheets nicht dargestellt,
 /// deshalb Titel und Aktionen als eigene Zeile.
 struct SheetHeader<Trailing: View>: View {
-    let title: String
+    let title: Text
     @ViewBuilder var trailing: () -> Trailing
 
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text(title)
+                title
                     .font(.headline)
                 Spacer()
                 trailing()

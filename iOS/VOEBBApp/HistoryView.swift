@@ -28,7 +28,7 @@ struct HistoryView: View {
         }
         #else
         VStack(spacing: 0) {
-            SheetHeader(title: "Verlauf") {
+            SheetHeader(title: Text("Verlauf")) {
                 HStack(spacing: 12) {
                     if model.accounts.count > 1 { accountPicker }
                     shareLink
@@ -113,13 +113,12 @@ struct HistoryView: View {
 
     /// Klartext-Fassung der angezeigten Liste, gleiche Gliederung und Monatsgenauigkeit wie die Ansicht.
     private var exportText: String {
-        let dateFormatter = DateFormatter()
-        dateFormatter.locale = Locale(identifier: "de_DE")
-        dateFormatter.dateFormat = "dd.MM.yyyy"
-        let accountLabel = model.accounts.first { $0.cardNumber == accountFilter }?.name ?? "Alle Konten"
+        let accountLabel = model.accounts.first { $0.cardNumber == accountFilter }?.name
+            ?? String(localized: "Alle Konten")
+        let today = Date().formatted(date: .numeric, time: .omitted)
 
-        var lines = ["VÖPP – Ausleih-Verlauf", "Stand \(dateFormatter.string(from: Date())) · \(accountLabel)"]
-        if !searchText.isEmpty { lines.append("Suche: \(searchText)") }
+        var lines = [String(localized: "VÖPP – Ausleih-Verlauf"), String(localized: "Stand \(today) · \(accountLabel)")]
+        if !searchText.isEmpty { lines.append(String(localized: "Suche: \(searchText)")) }
 
         func line(_ entry: LoanHistoryEntry) -> String {
             var parts = [entry.title.voebbDisplayTitle]
@@ -132,7 +131,7 @@ struct HistoryView: View {
 
         if !openEntries.isEmpty {
             lines.append("")
-            lines.append("Aktuell ausgeliehen")
+            lines.append(String(localized: "Aktuell ausgeliehen"))
             lines.append(contentsOf: openEntries.map(line))
         }
         for group in monthGroups {
@@ -169,9 +168,6 @@ struct HistoryView: View {
         let closed = filtered.filter { !$0.isOpen }.sorted { $0.returnedAt! > $1.returnedAt! }
         let keyFormatter = DateFormatter()
         keyFormatter.dateFormat = "yyyy-MM"
-        let labelFormatter = DateFormatter()
-        labelFormatter.locale = Locale(identifier: "de_DE")
-        labelFormatter.dateFormat = "LLLL yyyy"
 
         var groups: [MonthGroup] = []
         for entry in closed {
@@ -179,7 +175,7 @@ struct HistoryView: View {
             if let i = groups.firstIndex(where: { $0.key == key }) {
                 groups[i] = MonthGroup(key: key, label: groups[i].label, entries: groups[i].entries + [entry])
             } else {
-                groups.append(MonthGroup(key: key, label: labelFormatter.string(from: entry.returnedAt!), entries: [entry]))
+                groups.append(MonthGroup(key: key, label: LoanHistoryEntry.monthText(entry.returnedAt!), entries: [entry]))
             }
         }
         return groups
@@ -218,20 +214,18 @@ extension LoanHistoryEntry {
     /// Bewusst nur monatsgenau: "Ausgeliehen September 2026" bzw.
     /// "Ausgeliehen September 2026 · zurückgegeben Oktober 2026".
     var periodText: String {
-        let start = Self.monthFormatter.string(from: firstSeen)
+        let start = Self.monthText(firstSeen)
         guard let returned = returnedAt else {
-            return "Ausgeliehen \(start)"
+            return String(localized: "Ausgeliehen \(start)")
         }
-        let end = Self.monthFormatter.string(from: returned)
+        let end = Self.monthText(returned)
         return start == end
-            ? "Ausgeliehen und zurückgegeben \(end)"
-            : "Ausgeliehen \(start) · zurückgegeben \(end)"
+            ? String(localized: "Ausgeliehen und zurückgegeben \(end)")
+            : String(localized: "Ausgeliehen \(start) · zurückgegeben \(end)")
     }
 
-    private static let monthFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "de_DE")
-        f.dateFormat = "LLLL yyyy"
-        return f
-    }()
+    /// „September 2026“ in der Systemsprache.
+    static func monthText(_ date: Date) -> String {
+        date.formatted(.dateTime.month(.wide).year())
+    }
 }

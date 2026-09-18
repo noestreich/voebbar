@@ -108,7 +108,7 @@ struct AccountHeader: View {
         )
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityText)
-        .accessibilityHint(isCollapsed ? "Zeigt die Ausleihen dieses Kontos" : "Blendet die Ausleihen dieses Kontos aus")
+        .accessibilityHint(isCollapsed ? Text("Zeigt die Ausleihen dieses Kontos") : Text("Blendet die Ausleihen dieses Kontos aus"))
     }
 
     // MARK: Spalten
@@ -199,23 +199,22 @@ struct AccountHeader: View {
 
     // MARK: Text
 
+    /// Betrag in der Systemsprache formatiert („2,40 €“ / „€2.40“).
     static func feesString(_ fees: Double) -> String {
-        String(format: "%.2f €", locale: Locale(identifier: "de_DE"), fees)
+        fees.formatted(.currency(code: "EUR"))
     }
 
     /// Ein Satz für VoiceOver, immer mit vollem Namen: „Suse, Abholcode 35 Da, 2,40 Euro Gebühren, 15 Ausleihen“
     private var accessibilityText: String {
         var parts = [name]
-        if let pickupCode { parts.append("Abholcode \(pickupCode)") }
-        if showsWarning { parts.append("Ausweis läuft bald ab") }
+        if let pickupCode { parts.append(String(localized: "Abholcode \(pickupCode)")) }
+        if showsWarning { parts.append(String(localized: "Ausweis läuft bald ab")) }
         parts.append(fees > 0
-                     ? String(format: "%.2f Euro Gebühren", locale: Locale(identifier: "de_DE"), fees)
-                     : "keine Gebühren")
-        switch loanCount {
-        case 0: parts.append("keine Ausleihen")
-        case 1: parts.append("1 Ausleihe")
-        default: parts.append("\(loanCount) Ausleihen")
-        }
+                     ? String(localized: "\(Self.feesString(fees)) Gebühren")
+                     : String(localized: "keine Gebühren"))
+        parts.append(loanCount == 0
+                     ? String(localized: "keine Ausleihen")
+                     : String(localized: "\(loanCount) Ausleihen"))
         return parts.joined(separator: ", ")
     }
 }

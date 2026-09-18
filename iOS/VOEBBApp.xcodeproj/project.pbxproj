@@ -17,6 +17,8 @@
 		AA0000000000000000000108 /* BarcodeScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000208 /* BarcodeScannerView.swift */; };
 		AA0000000000000000000109 /* PlatformShims.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000209 /* PlatformShims.swift */; };
 		AA0000000000000000000110 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000210 /* MenuBarView.swift */; };
+		AA0000000000000000000116 /* Messages.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000219 /* Messages.swift */; };
+		AA0000000000000000000117 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000220 /* Localizable.xcstrings */; };
 		AA0000000000000000000115 /* LibraryNames.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000218 /* LibraryNames.swift */; };
 		AA0000000000000000000114 /* AccountHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000217 /* AccountHeaderView.swift */; };
 		AA0000000000000000000112 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000215 /* HistoryView.swift */; };
@@ -36,6 +38,11 @@
 		AA0000000000000000000209 /* PlatformShims.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformShims.swift; sourceTree = "<group>"; };
 		AA0000000000000000000210 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000211 /* VOEBBApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = VOEBBApp.entitlements; sourceTree = "<group>"; };
+		AA0000000000000000000219 /* Messages.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Messages.swift; sourceTree = "<group>"; };
+		AA0000000000000000000220 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		AA0000000000000000000221 /* tr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = tr; path = tr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		AA0000000000000000000222 /* pl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pl; path = pl.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		AA0000000000000000000223 /* ru */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ru; path = ru.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		AA0000000000000000000218 /* LibraryNames.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryNames.swift; sourceTree = "<group>"; };
 		AA0000000000000000000217 /* AccountHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountHeaderView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000215 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
@@ -78,6 +85,8 @@
 				AA0000000000000000000215 /* HistoryView.swift */,
 				AA0000000000000000000217 /* AccountHeaderView.swift */,
 				AA0000000000000000000218 /* LibraryNames.swift */,
+				AA0000000000000000000219 /* Messages.swift */,
+				AA0000000000000000000220 /* Localizable.xcstrings */,
 				AA0000000000000000000216 /* TitleFormatting.swift */,
 				AA0000000000000000000206 /* Assets.xcassets */,
 				AA0000000000000000000211 /* VOEBBApp.entitlements */,
@@ -139,6 +148,9 @@
 			knownRegions = (
 				de,
 				en,
+				tr,
+				pl,
+				ru,
 				Base,
 			);
 			mainGroup = AA0000000000000000000401;
@@ -161,6 +173,7 @@
 			files = (
 				AA0000000000000000000106 /* Assets.xcassets in Resources */,
 				AA0000000000000000000111 /* InfoPlist.strings in Resources */,
+				AA0000000000000000000117 /* Localizable.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -182,6 +195,7 @@
 				AA0000000000000000000112 /* HistoryView.swift in Sources */,
 				AA0000000000000000000114 /* AccountHeaderView.swift in Sources */,
 				AA0000000000000000000115 /* LibraryNames.swift in Sources */,
+				AA0000000000000000000116 /* Messages.swift in Sources */,
 				AA0000000000000000000113 /* TitleFormatting.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -194,6 +208,9 @@
 			children = (
 				AA0000000000000000000213 /* de */,
 				AA0000000000000000000214 /* en */,
+				AA0000000000000000000221 /* tr */,
+				AA0000000000000000000222 /* pl */,
+				AA0000000000000000000223 /* ru */,
 			);
 			name = InfoPlist.strings;
 			sourceTree = "<group>";
@@ -270,6 +287,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -310,6 +328,7 @@
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
