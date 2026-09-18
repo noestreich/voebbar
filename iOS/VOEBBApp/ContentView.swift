@@ -29,6 +29,8 @@ struct ContentView: View {
     @State private var showAccounts = false
     @State private var showHistory = false
     @State private var collapsedAccounts: Set<String> = []
+    /// Gemessene Namensbreiten und Zeilenbreite der Kopfzeilen (siehe AccountHeaderView)
+    @State private var headerMetrics = HeaderColumnMetrics()
     @State private var selectedLoan: SelectedLoan?
 
     var body: some View {
@@ -116,6 +118,8 @@ struct ContentView: View {
         .refreshable {
             await model.refresh()
         }
+        .onPreferenceChange(AccountNameWidthKey.self) { headerMetrics.absorb(nameWidths: $0) }
+        .onPreferenceChange(HeaderRowWidthKey.self) { headerMetrics.absorb(rowWidth: $0) }
         .safeAreaInset(edge: .top, spacing: 0) {
             statusBanner
         }
@@ -232,48 +236,25 @@ struct ContentView: View {
                     }
                 }
             } label: {
-                HStack {
-                    Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
-                        .rotationEffect(.degrees(isCollapsed ? 0 : 90))
-                        .foregroundStyle(.secondary)
-                    Text(data.account.name)
-                        .font(.headline)
-                        .foregroundStyle(Color.primary)
-                    if let code = data.pickupCode {
-                        Text("(\(code))")
-                            .font(.subheadline)
-                            .foregroundStyle(Color.secondary)
-                    }
-                    if data.cardExpiryWarning != nil {
-                        Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.caption)
-                            .foregroundStyle(Color.orange)
-                    }
-                    Spacer()
-                    Text(String(format: "%.2f €", locale: Locale(identifier: "de_DE"), data.fees))
-                        .foregroundStyle(data.fees > 0 ? Color.red : Color.secondary)
-                    loanCountBadge(data)
-                }
-                .contentShape(Rectangle())
+                AccountHeader(
+                    name: data.account.name,
+                    pickupCode: data.pickupCode,
+                    showsWarning: data.cardExpiryWarning != nil,
+                    fees: data.fees,
+                    loanCount: data.loans.count,
+                    badgeColor: urgencyColor(data),
+                    isCollapsed: isCollapsed,
+                    nameColumnWidth: headerMetrics.nameColumnWidth,
+                    measurementID: data.account.cardNumber
+                )
             }
             .buttonStyle(.plain)
             .textCase(nil)
         }
     }
 
-    /// Zahl der Ausleihen, eingefärbt nach dem dringlichsten Medium:
-    /// rot wenn ein 📕 dabei ist, orange bei 📙, grün sonst — grau bei 0 Ausleihen.
-    private func loanCountBadge(_ data: AccountData) -> some View {
-        let color = urgencyColor(data)
-        return Text("\(data.loans.count)")
-            .font(.footnote.weight(.semibold))
-            .foregroundStyle(color)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 2)
-            .background(Capsule().fill(color.opacity(0.15)))
-    }
-
+    /// Farbe der Ausleihen-Badge nach dem dringlichsten Medium:
+    /// rot wenn ein Medium < 7 Tage/überfällig, orange bei ≤ 14 Tagen, grün sonst — grau bei 0 Ausleihen.
     private func urgencyColor(_ data: AccountData) -> Color {
         guard !data.loans.isEmpty else { return .secondary }
         if data.loans.contains(where: { $0.isOverdue || $0.daysUntilDue < 7 }) { return .red }

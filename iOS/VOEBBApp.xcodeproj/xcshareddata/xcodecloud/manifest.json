@@ -1,0 +1,9 @@
+{
+  "id" : "f5868807-d5f1-4244-befc-bf3ba2673db5",
+  "targets" : [
+    {
+      "id" : "DBAAD555-5F7F-4A75-AFF9-CE445D7512A0",
+      "name" : "VOEBBApp"
+    }
+  ]
+}

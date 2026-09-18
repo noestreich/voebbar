@@ -2,6 +2,11 @@
 
 Versionen von VÖPP (iOS und macOS im App Store, gemeinsame Versionsnummer). Die frühere Menüleisten-App VOEBBMenu (eigene Nummer, zuletzt 1.3) wird seit September 2026 nicht mehr weiterentwickelt.
 
+## Unveröffentlicht
+
+### Darstellung
+- **Ruhigere Kontokopfzeilen:** Chevron, Name, Abholcode, Gebühr und Ausleihen-Badge stehen jetzt über alle Konten hinweg in echten Spalten. Die Namensspalte ist so breit wie der längste Kontoname (höchstens ~30 % der Zeile, längere Namen werden gekürzt), der Abholcode steht ohne Klammern in eigener Spalte, die Badge hat eine feste Spalte für drei Ziffern, sodass der Gebührenbetrag nicht mehr springt. Nullwerte sind gedämpft: „–“ statt „0,00 €“, keine Badge bei 0 Ausleihen. Bei großen Schriftgrößen bricht die Kopfzeile einheitlich auf zwei Zeilen um; VoiceOver liest sie als einen Satz mit vollem Namen.
+
 ## VÖPP 1.9.1 (iOS + macOS) — 2026-09-16
 
 ### Neu

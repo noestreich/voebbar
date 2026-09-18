@@ -17,6 +17,7 @@
 		AA0000000000000000000108 /* BarcodeScannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000208 /* BarcodeScannerView.swift */; };
 		AA0000000000000000000109 /* PlatformShims.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000209 /* PlatformShims.swift */; };
 		AA0000000000000000000110 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000210 /* MenuBarView.swift */; };
+		AA0000000000000000000114 /* AccountHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000217 /* AccountHeaderView.swift */; };
 		AA0000000000000000000112 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000215 /* HistoryView.swift */; };
 		AA0000000000000000000113 /* TitleFormatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000216 /* TitleFormatting.swift */; };
 		AA0000000000000000000111 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = AA0000000000000000000212 /* InfoPlist.strings */; };
@@ -34,6 +35,7 @@
 		AA0000000000000000000209 /* PlatformShims.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformShims.swift; sourceTree = "<group>"; };
 		AA0000000000000000000210 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000211 /* VOEBBApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = VOEBBApp.entitlements; sourceTree = "<group>"; };
+		AA0000000000000000000217 /* AccountHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccountHeaderView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000215 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
 		AA0000000000000000000216 /* TitleFormatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TitleFormatting.swift; sourceTree = "<group>"; };
 		AA0000000000000000000213 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -72,6 +74,7 @@
 				AA0000000000000000000209 /* PlatformShims.swift */,
 				AA0000000000000000000210 /* MenuBarView.swift */,
 				AA0000000000000000000215 /* HistoryView.swift */,
+				AA0000000000000000000217 /* AccountHeaderView.swift */,
 				AA0000000000000000000216 /* TitleFormatting.swift */,
 				AA0000000000000000000206 /* Assets.xcassets */,
 				AA0000000000000000000211 /* VOEBBApp.entitlements */,
@@ -174,6 +177,7 @@
 				AA0000000000000000000109 /* PlatformShims.swift in Sources */,
 				AA0000000000000000000110 /* MenuBarView.swift in Sources */,
 				AA0000000000000000000112 /* HistoryView.swift in Sources */,
+				AA0000000000000000000114 /* AccountHeaderView.swift in Sources */,
 				AA0000000000000000000113 /* TitleFormatting.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
