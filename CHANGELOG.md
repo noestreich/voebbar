@@ -2,7 +2,7 @@
 
 Versionen von VÖPP (iOS und macOS im App Store, gemeinsame Versionsnummer). Die frühere Menüleisten-App VOEBBMenu (eigene Nummer, zuletzt 1.3) wird seit September 2026 nicht mehr weiterentwickelt.
 
-## Unveröffentlicht
+## VÖPP 1.9.2 (iOS + macOS) — 2026-09-18
 
 ### Darstellung
 - **Kurze Bibliotheksnamen:** Statt „Friedrichshain-Kreuzberg: Bezirkszentralbibliothek Pablo Neruda“ steht in Listen jetzt „Pablo Neruda“ — nach einer einheitlichen Kurzliste aller VÖBB-Standorte; nur mehrdeutige Namen tragen den Bezirk („Kurt Tucholsky · Pankow“). Die Detailansicht zeigt weiterhin den vollen Namen.
