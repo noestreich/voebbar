@@ -2,15 +2,15 @@
 
 Versionen von VÖPP (iOS und macOS im App Store, gemeinsame Versionsnummer). Die frühere Menüleisten-App VOEBBMenu (eigene Nummer, zuletzt 1.3) wird seit September 2026 nicht mehr weiterentwickelt.
 
-## Unveröffentlicht
+## VÖPP 1.9.3 (iOS + macOS) — 2026-09-18
+
+*1.9.2 wurde nicht veröffentlicht; ihre Änderungen sind hier enthalten.*
 
 ### Neu
 - **Oberfläche in fünf Sprachen:** Deutsch, Englisch, Türkisch, Polnisch und Russisch — die App folgt der Systemsprache des Geräts. Beträge und Daten werden passend zur Sprache formatiert („€2.40“, „13 days“). Titel, Bibliotheksnamen und Statusmeldungen von VÖBB bleiben wie geliefert. Keine gesonderten Store-Texte oder Screenshots.
 
 ### Unter der Haube
 - String Catalog (`Localizable.xcstrings`) mit deutschen Quelltexten als Schlüssel — fehlt eine Übersetzung, erscheint der deutsche Text. Pluralformen für Polnisch und Russisch. Der Scraping-Kern VOEBBKit bleibt bewusst unlokalisiert; seine Meldungen werden in der App-Schicht übersetzt (`Messages.swift`).
-
-## VÖPP 1.9.2 (iOS + macOS) — 2026-09-18
 
 ### Darstellung
 - **Kurze Bibliotheksnamen:** Statt „Friedrichshain-Kreuzberg: Bezirkszentralbibliothek Pablo Neruda“ steht in Listen jetzt „Pablo Neruda“ — nach einer einheitlichen Kurzliste aller VÖBB-Standorte; nur mehrdeutige Namen tragen den Bezirk („Kurt Tucholsky · Pankow“). Die Detailansicht zeigt weiterhin den vollen Namen.
