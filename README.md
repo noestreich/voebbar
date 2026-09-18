@@ -18,42 +18,52 @@ Verlängerung auf Knopfdruck. Eine App für iPhone und Mac, ein gemeinsamer Kern
   <img src="assets/shot-konten.png" width="30%" alt="Kontenverwaltung mit Erinnerungs-Einstellung" />
 </p>
 
+VÖPP zeigt dir die Ausleihen deiner Berliner Bibliothekskonten (VÖBB) auf einen Blick – für
+beliebig viele Bibliotheksausweise, auf iPhone und Mac. Ein Download für beide Geräte.
+
 **Ausleihen im Blick**
-- Alle Medien gruppiert nach Konto, sortiert nach Fälligkeit — Abschnitte ein-/ausklappbar
-- Ampel-System pro Medium (rot < 7 Tage · orange 7–14 Tage · grün > 14 Tage); die
-  Ausleihen-Zahl eines Kontos färbt sich nach dem dringlichsten Medium
-- Bereitstellungen (abholbereite Bestellungen) oben in der Kontoliste mit Abholfrist,
-  Abholcode und Gebühren direkt in der Kopfzeile, Hinweis bei ablaufendem Ausweis
-- Beim Start sofort der zuletzt geladene Stand, Aktualisierung läuft im Hintergrund —
-  mit Fortschrittsleiste und dauerhaft sichtbarem „Zuletzt aktualisiert"-Hinweis
+- Alle ausgeliehenen Medien mit Rückgabedatum, sortiert nach Fälligkeit
+- Ampel-System: rot = bald fällig, orange = demnächst, grün = entspannt
+- Mehrere Konten, etwa die ganze Familie, ein- und ausklappbar
+- Pro Konto Gebühren, Abholcode und Hinweis, wenn der Ausweis bald abläuft
+- Bereitstellungen: Bestellte Medien, die zur Abholung bereitliegen, mit Abholfrist
+- Kurze Bibliotheksnamen, damit die Liste ruhig bleibt
 
 **Verlängern**
-- Einzelne Medien verlängern: Tipp auf ein Medium öffnet die Detailansicht mit
-  Verlängern-Button (auf dem iPhone alternativ per Wisch-Geste nach links)
-- „Verlängerbare verlängern" pro Konto mit Live-Feedback während des Vorgangs
-- Zwei-Schritt-Verlängerung: erst Verlängerbarkeit prüfen, dann nur die verlängerbaren
-  Medien einreichen — verhindert, dass VÖBB die ganze Aktion abbricht, sobald ein Titel
-  gesperrt ist. Als verlängert gilt nur, was VÖBB danach mit neuem Fälligkeitsdatum zeigt
+- Einzelne Medien oder alle verlängerbaren eines Kontos direkt aus der App
+- Vorher wird geprüft, was VÖBB überhaupt verlängern lässt – gesperrte Medien bleiben außen
+  vor, der Grund steht in der Detailansicht
+- Als verlängert gilt nur, was VÖBB danach mit neuem Datum bestätigt
 
 **Verlauf**
-- Lokaler Ausleih-Verlauf hinter dem Uhr-Symbol: laufende Ausleihen oben, zurückgegebene
-  Medien nach Monat gruppiert, mit Suche und Kontofilter — monatsgenau, abschaltbar,
-  bleibt auf dem Gerät
+- Welche Medien du wann ausgeliehen und zurückgegeben hast, nach Monat gruppiert, mit Suche
+  und Kontofilter
+- Als Text teilbar, etwa für Nachrichten oder Notizen
+- Entsteht nur auf deinem Gerät und lässt sich abschalten
 
-**Mac**
-- Fenster-App plus Menüleisten-Symbol mit den Resttagen des dringlichsten Mediums; das Menü
-  fasst jedes Konto in einer Zeile zusammen und aktualisiert stündlich im Hintergrund
+**Erinnern**
+- Mitteilung vor dem nächsten Rückgabedatum: 1 Tag, 3 Tage oder 1 Woche vorher
 
-**Konten & Komfort**
-- Beliebig viele Bibliothekskarten, editierbar, mit Passwort-Anzeige per Auge-Knopf
-- Ausweisnummer per Barcode-Scan von der Kartenrückseite übernehmen (iPhone-Kamera)
-- Erinnerung vor dem nächsten Rückgabedatum: 1 Tag, 3 Tage oder 1 Woche vorher
-  (lokale Benachrichtigung, morgens um 9 Uhr)
+**Auf dem Mac**
+- Fenster-App plus Symbol in der Menüleiste mit den Resttagen des dringlichsten Mediums
+- Das Menü fasst jedes Konto in einer Zeile zusammen und aktualisiert stündlich im Hintergrund
 
-**Privatsphäre**
-- Passwörter ausschließlich im Schlüsselbund des Geräts, alle weiteren Daten lokal
+<img src="assets/shot-mac.png" width="60%" alt="VÖPP auf dem Mac: Fenster mit Konten, Bereitstellung und Ausleihen" />
+
+**Komfort**
+- Zuletzt geladener Stand sofort beim Öffnen, Aktualisierung läuft im Hintergrund
+- Ausweisnummer per Barcode-Scan von der Kartenrückseite (iPhone)
+- Oberfläche in Deutsch, Englisch, Türkisch, Polnisch und Russisch
+
+**Datenschutz**
+- Passwörter liegen ausschließlich im Schlüsselbund deines Geräts, alle weiteren Daten lokal
 - Keine Server, kein Tracking, keine Werbung — Details in der
   [Datenschutzerklärung](PRIVACY.md)
+
+**Hinweis:** VÖPP ist ein privates, inoffizielles Projekt ohne Verbindung zum VÖBB oder zur ZLB.
+Die App greift auf die offizielle Webseite voebb.de zu. Ist diese etwa wegen Wartungsarbeiten
+nicht erreichbar, funktioniert auch die App nicht. Titel und Statusmeldungen stammen von VÖBB
+und erscheinen so, wie die Bibliothek sie liefert.
 
 Selbst bauen statt App Store:
 
