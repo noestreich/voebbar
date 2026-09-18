@@ -263,7 +263,8 @@ struct ContentView: View {
     }
 }
 
-/// Zeile für eine Bereitstellung: gedämpft, ohne Ampelpunkt, mit Abholfrist statt Autor.
+/// Zeile für eine Bereitstellung: gedämpft, ohne Ampelpunkt; rechts die Abholfrist an der
+/// Stelle der Fälligkeitsspalte, damit die Zeile ins Raster der Ausleihzeilen passt.
 struct PickupRow: View {
     let pickup: PickupItem
 
@@ -274,27 +275,53 @@ struct PickupRow: View {
                 .foregroundStyle(.secondary)
                 .frame(width: 10)
             VStack(alignment: .leading, spacing: 3) {
-                Text(pickup.title.components(separatedBy: " / ").first ?? pickup.title)
+                Text(pickup.title.voebbDisplayTitle)
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.secondary)
                     .lineLimit(2)
-                Text(pickup.readyUntilString.isEmpty
-                     ? "Bereitstellung – abholbereit"
-                     : "Bereitstellung – abholbereit bis \(pickup.readyUntilString)")
+                Text("Bereitstellung")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
-                Text(shortLibrary)
+                Text(pickup.library.voebbShortLibrary)
                     .font(.caption2)
                     .foregroundStyle(.tertiary)
                     .lineLimit(1)
             }
             Spacer(minLength: 12)
+            VStack(alignment: .trailing, spacing: 3) {
+                Text(readyUntilText)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Text("abholbereit")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            // Platzhalter in Chevron-Breite, damit die rechte Spalte mit den Ausleihzeilen fluchtet
+            Image(systemName: "chevron.right")
+                .font(.caption.weight(.semibold))
+                .hidden()
         }
         .padding(.vertical, 4)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityText)
     }
 
-    private var shortLibrary: String { pickup.library.voebbShortLibrary }
+    /// "bis 01.10." — Tag und Monat, das Jahr trägt bei einer Abholfrist nichts bei.
+    private var readyUntilText: String {
+        let s = pickup.readyUntilString
+        guard s.count == 10, s[s.index(s.startIndex, offsetBy: 2)] == "." else {
+            return s.isEmpty ? "abholbereit" : "bis \(s)"
+        }
+        return "bis \(s.prefix(6))"
+    }
+
+    private var accessibilityText: String {
+        var parts = [pickup.title.voebbDisplayTitle, "Bereitstellung"]
+        if !pickup.readyUntilString.isEmpty { parts.append("abholbereit bis \(pickup.readyUntilString)") }
+        parts.append(pickup.library.voebbShortLibrary)
+        return parts.joined(separator: ", ")
+    }
 }
 
 struct LoanRow: View {

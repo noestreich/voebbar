@@ -5,6 +5,9 @@ Versionen von VÖPP (iOS und macOS im App Store, gemeinsame Versionsnummer). Die
 ## Unveröffentlicht
 
 ### Darstellung
+- **Kurze Bibliotheksnamen:** Statt „Friedrichshain-Kreuzberg: Bezirkszentralbibliothek Pablo Neruda“ steht in Listen jetzt „Pablo Neruda“ — nach einer einheitlichen Kurzliste aller VÖBB-Standorte; nur mehrdeutige Namen tragen den Bezirk („Kurt Tucholsky · Pankow“). Die Detailansicht zeigt weiterhin den vollen Namen.
+- **Kürzere Autorzeile:** Nur die erste genannte Person; Übersetzer, Illustratoren und Klammerzusätze entfallen.
+- **Bereitstellungen im Raster:** Die Abholfrist steht rechts an der Stelle der Fälligkeitsspalte („bis 01.10.“), die Zeile darunter heißt nur noch „Bereitstellung“.
 - **Ruhigere Kontokopfzeilen:** Chevron, Name, Abholcode, Gebühr und Ausleihen-Badge stehen jetzt über alle Konten hinweg in echten Spalten. Die Namensspalte ist so breit wie der längste Kontoname (höchstens ~30 % der Zeile, längere Namen werden gekürzt), der Abholcode steht ohne Klammern in eigener Spalte, die Badge hat eine feste Spalte für drei Ziffern, sodass der Gebührenbetrag nicht mehr springt. Nullwerte sind gedämpft: „–“ statt „0,00 €“, keine Badge bei 0 Ausleihen. Bei großen Schriftgrößen bricht die Kopfzeile einheitlich auf zwei Zeilen um; VoiceOver liest sie als einen Satz mit vollem Namen.
 
 ## VÖPP 1.9.1 (iOS + macOS) — 2026-09-16
