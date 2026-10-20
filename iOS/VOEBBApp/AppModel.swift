@@ -10,7 +10,8 @@ final class AppModel: ObservableObject {
     @Published private(set) var refreshProgress: Double?
     /// Ausweisnummer des Kontos, für das gerade eine Verlängerung läuft, sonst nil.
     @Published private(set) var renewingCard: String?
-    /// checkboxValue des Mediums, für das gerade eine Einzelverlängerung läuft, sonst nil.
+    /// Konto + checkboxValue (`SelectedLoan.id`) des Mediums, für das gerade eine
+    /// Einzelverlängerung läuft, sonst nil — checkboxValue allein gibt es in jedem Konto.
     @Published private(set) var renewingLoan: String?
     @Published private(set) var lastRefreshed: Date?
     @Published var alert: AlertMessage?
@@ -143,7 +144,7 @@ final class AppModel: ObservableObject {
     func renew(loan: Loan, for account: LibraryAccount) async {
         guard renewingCard == nil, renewingLoan == nil,
               let password = AccountStorage.shared.password(for: account) else { return }
-        renewingLoan = loan.checkboxValue
+        renewingLoan = SelectedLoan.id(cardNumber: account.cardNumber, checkboxValue: loan.checkboxValue)
         do {
             let session = VOEBBSession(account: account)
             let outcome = try await session.renewLoan(password: password, matching: loan)

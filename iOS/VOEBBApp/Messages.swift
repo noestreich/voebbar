@@ -46,22 +46,20 @@ extension RenewalOutcome {
 }
 
 enum UserFacingMessages {
-    /// Fehlertext in der Systemsprache. Die beiden Meldungen, die Nutzer im Alltag wirklich
-    /// sehen, sind übersetzt; technische Details (Session, Parser) bleiben deutsch.
+    /// Fehlertext in der Systemsprache. Bewusst ohne technische Details: Bis auf falsche
+    /// Zugangsdaten und fehlendes Internet kann der Nutzer nichts tun außer abzuwarten —
+    /// meist sind es VÖBB-Wartungsfenster, in denen Login oder Seiten nicht wie erwartet kommen.
     static func text(for error: Error) -> String {
-        guard let voebbError = error as? VOEBBError else { return error.localizedDescription }
-        switch voebbError {
-        case .loginFailed(let detail): return String(localized: "Login fehlgeschlagen: \(translated(detail))")
-        case .networkError(let detail): return String(localized: "Netzwerkfehler: \(translated(detail))")
-        case .parseError(let detail): return String(localized: "Fehler beim Lesen: \(translated(detail))")
+        if case .loginFailed("Ausweisnummer oder Passwort falsch")? = error as? VOEBBError {
+            return String(localized: "Login fehlgeschlagen: \(String(localized: "Ausweisnummer oder Passwort falsch"))")
         }
+        if let urlError = error as? URLError, offlineCodes.contains(urlError.code) {
+            return String(localized: "Keine Internetverbindung. Bitte versuche es später noch einmal.")
+        }
+        return String(localized: "Die Bibliotheksseite reagiert gerade nicht wie erwartet – vielleicht wird sie gewartet. Bitte versuche es später noch einmal.")
     }
 
-    private static func translated(_ detail: String) -> String {
-        switch detail {
-        case "Ausweisnummer oder Passwort falsch": return String(localized: "Ausweisnummer oder Passwort falsch")
-        case "Cookie-Problem. Bitte erneut versuchen.": return String(localized: "Cookie-Problem. Bitte erneut versuchen.")
-        default: return detail
-        }
-    }
+    private static let offlineCodes: Set<URLError.Code> = [
+        .notConnectedToInternet, .networkConnectionLost, .dataNotAllowed, .internationalRoamingOff,
+    ]
 }

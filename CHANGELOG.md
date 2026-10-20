@@ -2,6 +2,14 @@
 
 Versionen von VÖPP (iOS und macOS im App Store, gemeinsame Versionsnummer). Die frühere Menüleisten-App VOEBBMenu (eigene Nummer, zuletzt 1.3) wird seit September 2026 nicht mehr weiterentwickelt.
 
+## Unveröffentlicht
+
+### Behoben
+- **Vertauschte Zeilen bei mehreren aufgeklappten Konten (v. a. Mac):** Beim Scrollen konnten in einem Konto Medien eines anderen Kontos auftauchen. Ursache: Die Zeilen waren nur über VÖBBs Checkbox-Nummer identifiziert, die in jedem Konto wieder bei 1 beginnt. Ausleihen und Bereitstellungen tragen jetzt die Ausweisnummer in ihrer Identität; auch der Fortschrittskreis einer Einzelverlängerung erscheint nur noch beim richtigen Konto.
+
+### Darstellung
+- **Verständliche Fehlermeldung bei VÖBB-Ausfällen:** Statt technischer Meldungen („Fehler beim Lesen: …“, „Session-ID nicht gefunden“) heißt es jetzt: „Die Bibliotheksseite reagiert gerade nicht wie erwartet – vielleicht wird sie gewartet. Bitte versuche es später noch einmal.“ Darunter steht, von wann der angezeigte Stand ist („Angezeigt wird der Stand vom 18.10.2026, 14:30.“). Ohne Internet: „Keine Internetverbindung …“; falsche Zugangsdaten werden weiterhin als solche gemeldet.
+
 ## VÖPP 1.9.3 (iOS + macOS) — 2026-09-18
 
 *1.9.2 wurde nicht veröffentlicht; ihre Änderungen sind hier enthalten.*

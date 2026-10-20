@@ -17,11 +17,24 @@ private extension Loan {
     var isBlocked: Bool { isRenewable == false }
 }
 
-/// Auswahl für das Medien-Detail-Sheet (Medium + zugehöriges Konto).
+/// Medium + zugehöriges Konto — für das Detail-Sheet und als Zeilen-Identität der Liste.
 struct SelectedLoan: Identifiable {
     let loan: Loan
     let account: LibraryAccount
-    var id: String { account.cardNumber + loan.checkboxValue }
+    /// checkboxValue allein ist nur innerhalb eines Kontos eindeutig (positional: 1, 2, 3 …);
+    /// in der gemeinsamen Liste verwechselt SwiftUI sonst Zeilen verschiedener Konten.
+    var id: String { Self.id(cardNumber: account.cardNumber, checkboxValue: loan.checkboxValue) }
+
+    static func id(cardNumber: String, checkboxValue: String) -> String {
+        cardNumber + "|" + checkboxValue
+    }
+}
+
+/// Bereitstellung mit kontoübergreifend eindeutiger Zeilen-Identität (siehe SelectedLoan.id).
+private struct AccountPickup: Identifiable {
+    let pickup: PickupItem
+    let cardNumber: String
+    var id: String { cardNumber + "|" + pickup.id }
 }
 
 struct ContentView: View {
@@ -180,13 +193,23 @@ struct ContentView: View {
                         .foregroundStyle(.orange)
                 }
                 // Abholbereite Bestellungen — ausgegraut, ohne Ampel, keine Aktion
-                ForEach(data.pickups, id: \.id) { pickup in
-                    PickupRow(pickup: pickup)
+                ForEach(data.pickups.map { AccountPickup(pickup: $0, cardNumber: data.account.cardNumber) }) { item in
+                    PickupRow(pickup: item.pickup)
                 }
                 if let error = data.error {
-                    Label(data.loans.isEmpty ? error : String(localized: "\(error) — angezeigt wird der letzte bekannte Stand"),
-                          systemImage: "exclamationmark.triangle")
-                        .foregroundStyle(.red)
+                    Label {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(error)
+                            if !data.loans.isEmpty {
+                                let stand = data.lastUpdated.formatted(date: .numeric, time: .shortened)
+                                Text("Angezeigt wird der Stand vom \(stand).")
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    } icon: {
+                        Image(systemName: "exclamationmark.triangle")
+                    }
+                    .foregroundStyle(.red)
                 }
                 if data.loans.isEmpty {
                     if data.error == nil {
@@ -194,11 +217,13 @@ struct ContentView: View {
                             .foregroundStyle(.secondary)
                     }
                 } else {
-                    ForEach(data.loans.sorted(by: { $0.dueDate < $1.dueDate }), id: \.checkboxValue) { loan in
+                    ForEach(data.loans.sorted(by: { $0.dueDate < $1.dueDate })
+                                .map { SelectedLoan(loan: $0, account: data.account) }) { item in
+                        let loan = item.loan
                         Button {
-                            selectedLoan = SelectedLoan(loan: loan, account: data.account)
+                            selectedLoan = item
                         } label: {
-                            LoanRow(loan: loan, isRenewing: model.renewingLoan == loan.checkboxValue)
+                            LoanRow(loan: loan, isRenewing: model.renewingLoan == item.id)
                         }
                         .buttonStyle(.plain)
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
