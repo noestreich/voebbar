@@ -31,35 +31,6 @@
         }
       }
     },
-    "%@ — angezeigt wird der letzte bekannte Stand" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ — showing the last known state"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ — wyświetlany jest ostatni znany stan"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ — показано последнее известное состояние"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ — bilinen son durum gösteriliyor"
-          }
-        }
-      }
-    },
     "%@ · abholbereit bis %@" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1091,6 +1062,35 @@
         }
       }
     },
+    "Angezeigt wird der Stand vom %@." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Showing the data as of %@."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyświetlany jest stan z %@."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показано состояние на %@."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ itibarıyla bilinen durum gösteriliyor."
+          }
+        }
+      }
+    },
     "Aus" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1584,35 +1584,6 @@
         }
       }
     },
-    "Cookie-Problem. Bitte erneut versuchen." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cookie problem. Please try again."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Problem z plikami cookie. Spróbuj ponownie."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Проблема с cookie. Попробуйте ещё раз."
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Çerez sorunu. Lütfen yeniden deneyin."
-          }
-        }
-      }
-    },
     "Das Passwort wird ausschließlich im Schlüsselbund dieses Geräts gespeichert." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1667,6 +1638,35 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Geçmiş kapalı. Hesap ayarlarında „Geçmişi kaydet“ altından açabilirsiniz."
+          }
+        }
+      }
+    },
+    "Die Bibliotheksseite reagiert gerade nicht wie erwartet – vielleicht wird sie gewartet. Bitte versuche es später noch einmal." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The library website isn't responding as expected right now – it may be down for maintenance. Please try again later."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strona biblioteki nie odpowiada teraz zgodnie z oczekiwaniami – być może trwają prace konserwacyjne. Spróbuj ponownie później."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сайт библиотеки сейчас отвечает не так, как ожидалось, – возможно, идут технические работы. Попробуйте позже."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kütüphane sitesi şu anda beklendiği gibi yanıt vermiyor – bakım çalışması yapılıyor olabilir. Lütfen daha sonra tekrar deneyin."
           }
         }
       }
@@ -1841,35 +1841,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Son teslim %@ (%@)"
-          }
-        }
-      }
-    },
-    "Fehler beim Lesen: %@" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reading error: %@"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Błąd odczytu: %@"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ошибка чтения: %@"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Okuma hatası: %@"
           }
         }
       }
@@ -2225,6 +2196,35 @@
         }
       }
     },
+    "Keine Internetverbindung. Bitte versuche es später noch einmal." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No internet connection. Please try again later."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brak połączenia z internetem. Spróbuj ponownie później."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет подключения к интернету. Попробуйте позже."
+          }
+        },
+        "tr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "İnternet bağlantısı yok. Lütfen daha sonra tekrar deneyin."
+          }
+        }
+      }
+    },
     "Keine Konten konfiguriert" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -2540,35 +2540,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ad (örn. Nicolas)"
-          }
-        }
-      }
-    },
-    "Netzwerkfehler: %@" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Network error: %@"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Błąd sieci: %@"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ошибка сети: %@"
-          }
-        },
-        "tr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ağ hatası: %@"
           }
         }
       }
